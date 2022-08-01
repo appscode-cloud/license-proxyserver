@@ -14,18 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package whoami
+package licensestatus
 
 import (
 	"context"
 
-	identityv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
+	proxyv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 )
 
@@ -34,7 +33,8 @@ type Storage struct{}
 var (
 	_ rest.GroupVersionKindProvider = &Storage{}
 	_ rest.Scoper                   = &Storage{}
-	_ rest.Creater                  = &Storage{}
+	_ rest.Getter                   = &Storage{}
+	_ rest.Lister                   = &Storage{}
 )
 
 func NewStorage() *Storage {
@@ -42,7 +42,7 @@ func NewStorage() *Storage {
 }
 
 func (r *Storage) GroupVersionKind(_ schema.GroupVersion) schema.GroupVersionKind {
-	return identityv1alpha1.GroupVersion.WithKind(identityv1alpha1.ResourceKindWhoAmI)
+	return proxyv1alpha1.SchemeGroupVersion.WithKind(proxyv1alpha1.ResourceKindLicenseStatus)
 }
 
 func (r *Storage) NamespaceScoped() bool {
@@ -50,27 +50,24 @@ func (r *Storage) NamespaceScoped() bool {
 }
 
 func (r *Storage) New() runtime.Object {
-	return &identityv1alpha1.WhoAmI{}
+	return &proxyv1alpha1.LicenseStatus{}
 }
 
-func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.ValidateObjectFunc, _ *metav1.CreateOptions) (runtime.Object, error) {
-	user, ok := request.UserFrom(ctx)
-	if !ok {
-		return nil, apierrors.NewBadRequest("missing user info")
-	}
-	req := obj.(*identityv1alpha1.WhoAmI)
+func (r *Storage) NewList() runtime.Object {
+	return &proxyv1alpha1.LicenseStatusList{}
+}
 
-	extra := make(map[string]identityv1alpha1.ExtraValue)
-	for k, v := range user.GetExtra() {
-		extra[k] = v
-	}
-	req.Response = &identityv1alpha1.WhoAmIResponse{
-		User: &identityv1alpha1.UserInfo{
-			Username: user.GetName(),
-			UID:      user.GetUID(),
-			Groups:   user.GetGroups(),
-			Extra:    extra,
-		},
-	}
-	return req, nil
+func (r *Storage) List(ctx context.Context, options *internalversion.ListOptions) (runtime.Object, error) {
+	// TODO implement me
+	panic("implement me")
+}
+
+func (r *Storage) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
+	// TODO implement me
+	panic("implement me")
+}
+
+func (r *Storage) ConvertToTable(ctx context.Context, object runtime.Object, tableOptions runtime.Object) (*metav1.Table, error) {
+	// TODO implement me
+	panic("implement me")
 }

@@ -22,7 +22,7 @@ import (
 	"io"
 	"net"
 
-	identityv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
+	proxyv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
 	"go.bytebuilders.dev/license-proxyserver/pkg/apiserver"
 
 	"github.com/spf13/pflag"
@@ -60,9 +60,7 @@ func NewUIServerOptions(out, errOut io.Writer) *LicenseProxyServerOptions {
 		RecommendedOptions: genericoptions.NewRecommendedOptions(
 			defaultEtcdPathPrefix,
 			apiserver.Codecs.LegacyCodec(
-				auditorv1alpha1.SchemeGroupVersion,
-				rsapi.SchemeGroupVersion,
-				identityv1alpha1.GroupVersion,
+				proxyv1alpha1.SchemeGroupVersion,
 				corev1alpha1.GroupVersion,
 			),
 		),
@@ -108,7 +106,7 @@ func (o *LicenseProxyServerOptions) Config() (*apiserver.Config, error) {
 	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(
 		ou.GetDefinitions(
 			auditorv1alpha1.GetOpenAPIDefinitions,
-			identityv1alpha1.GetOpenAPIDefinitions,
+			proxyv1alpha1.GetOpenAPIDefinitions,
 			corev1alpha1.GetOpenAPIDefinitions,
 		),
 		openapi.NewDefinitionNamer(apiserver.Scheme))
