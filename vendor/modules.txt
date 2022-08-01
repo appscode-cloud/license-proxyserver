@@ -259,8 +259,10 @@ github.com/yudai/gojsondiff/formatter
 # github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82
 ## explicit
 github.com/yudai/golcs
-# go.bytebuilders.dev/license-verifier v0.9.7
-## explicit; go 1.15
+# go.bytebuilders.dev/license-verifier v0.10.0
+## explicit; go 1.18
+go.bytebuilders.dev/license-verifier/apis/licenses
+go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1
 go.bytebuilders.dev/license-verifier/info
 # go.etcd.io/etcd/api/v3 v3.5.1
 ## explicit; go 1.16
@@ -1205,7 +1207,7 @@ kmodules.xyz/custom-resources/apis/auditor/v1alpha1
 # kmodules.xyz/offshoot-api v0.24.1
 ## explicit; go 1.18
 kmodules.xyz/offshoot-api/api/v1
-# kmodules.xyz/resource-metadata v0.12.4-0.20220726185618-99fbbaaa8ba5
+# kmodules.xyz/resource-metadata v0.12.5
 ## explicit; go 1.18
 kmodules.xyz/resource-metadata/apis/core/v1alpha1
 kmodules.xyz/resource-metadata/apis/meta
@@ -1228,7 +1230,7 @@ sigs.k8s.io/apiserver-network-proxy/konnectivity-client/proto/client
 # sigs.k8s.io/cli-utils v0.31.1
 ## explicit; go 1.17
 sigs.k8s.io/cli-utils/pkg/kstatus/status
-# sigs.k8s.io/controller-runtime v0.12.1 => github.com/kmodules/controller-runtime v0.12.2-0.20220603144237-6cd001896bf3
+# sigs.k8s.io/controller-runtime v0.12.3 => github.com/kmodules/controller-runtime v0.12.2-0.20220603144237-6cd001896bf3
 ## explicit; go 1.17
 sigs.k8s.io/controller-runtime/pkg/cache
 sigs.k8s.io/controller-runtime/pkg/cache/internal

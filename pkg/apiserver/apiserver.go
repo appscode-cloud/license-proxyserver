@@ -20,9 +20,11 @@ import (
 	"context"
 	"fmt"
 
+	"go.bytebuilders.dev/license-proxyserver/apis/proxyserver"
 	proxyserverinstall "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/install"
 	proxyserverv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
-	whoamistorage "go.bytebuilders.dev/license-proxyserver/pkg/registry/proxyserver/whoami"
+	"go.bytebuilders.dev/license-proxyserver/pkg/registry/proxyserver/licenserequest"
+	"go.bytebuilders.dev/license-proxyserver/pkg/registry/proxyserver/licensestatus"
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -172,10 +174,11 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		Manager:          mgr,
 	}
 	{
-		apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(proxyserverv1alpha1.GroupName, Scheme, metav1.ParameterCodec, Codecs)
+		apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(proxyserver.GroupName, Scheme, metav1.ParameterCodec, Codecs)
 
 		v1alpha1storage := map[string]rest.Storage{}
-		v1alpha1storage[proxyserverv1alpha1.ResourceWhoAmIs] = whoamistorage.NewStorage()
+		v1alpha1storage[proxyserverv1alpha1.ResourceLicenseRequests] = licenserequest.NewStorage()
+		v1alpha1storage[proxyserverv1alpha1.ResourceLicenseStatuses] = licensestatus.NewStorage()
 		apiGroupInfo.VersionedResourcesStorageMap["v1alpha1"] = v1alpha1storage
 
 		if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {

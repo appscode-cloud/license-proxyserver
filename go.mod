@@ -6,7 +6,7 @@ require (
 	github.com/google/gofuzz v1.2.0
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/license-verifier v0.9.7
+	go.bytebuilders.dev/license-verifier v0.10.0
 	gomodules.xyz/logs v0.0.6
 	gomodules.xyz/x v0.0.14
 	k8s.io/api v0.24.1
@@ -18,8 +18,8 @@ require (
 	kmodules.xyz/authorizer v0.24.0
 	kmodules.xyz/client-go v0.24.5
 	kmodules.xyz/custom-resources v0.24.0
-	kmodules.xyz/resource-metadata v0.12.4-0.20220726185618-99fbbaaa8ba5
-	sigs.k8s.io/controller-runtime v0.12.1
+	kmodules.xyz/resource-metadata v0.12.5
+	sigs.k8s.io/controller-runtime v0.12.3
 )
 
 require (
