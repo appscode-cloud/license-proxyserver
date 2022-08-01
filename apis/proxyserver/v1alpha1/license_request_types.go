@@ -47,7 +47,7 @@ type LicenseRequestRequest struct {
 }
 
 type LicenseRequestResponse struct {
-	contract Contract `json:"contract"`
+	Contract Contract `json:"contract"`
 	License  string   `json:"license"`
 }
 
