@@ -43,7 +43,7 @@ type LicenseRequest struct {
 }
 
 type LicenseRequestRequest struct {
-	Feature string `json:"feature"`
+	Features []string `json:"features"`
 }
 
 type LicenseRequestResponse struct {
