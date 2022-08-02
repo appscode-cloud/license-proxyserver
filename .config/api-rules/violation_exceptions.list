@@ -1,3 +1,4 @@
+API rule violation: list_type_missing,go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1,LicenseRequestRequest,Features
 API rule violation: list_type_missing,k8s.io/api/apps/v1,DaemonSetStatus,Conditions
 API rule violation: list_type_missing,k8s.io/api/apps/v1,DeploymentStatus,Conditions
 API rule violation: list_type_missing,k8s.io/api/apps/v1,ReplicaSetStatus,Conditions
