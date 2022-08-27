@@ -18,9 +18,15 @@ package licenserequest
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
+	"strings"
 
 	proxyv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
+	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
+	verifier "go.bytebuilders.dev/license-verifier"
+	"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
+	"go.bytebuilders.dev/license-verifier/client"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,7 +36,13 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 )
 
-type Storage struct{}
+type Storage struct {
+	cid    string
+	caCert *x509.Certificate
+	lc     *client.Client
+	reg    *storage.LicenseRegistry
+	rb     *storage.RecordBook
+}
 
 var (
 	_ rest.GroupVersionKindProvider = &Storage{}
@@ -38,8 +50,15 @@ var (
 	_ rest.Creater                  = &Storage{}
 )
 
-func NewStorage() *Storage {
-	return &Storage{}
+func NewStorage(cid string, caCert *x509.Certificate, lc *client.Client, reg *storage.LicenseRegistry, rb *storage.RecordBook) *Storage {
+	s := &Storage{
+		cid:    cid,
+		caCert: caCert,
+		lc:     lc,
+		reg:    reg,
+		rb:     rb,
+	}
+	return s
 }
 
 func (r *Storage) GroupVersionKind(_ schema.GroupVersion) schema.GroupVersionKind {
@@ -62,10 +81,39 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 	req := obj.(*proxyv1alpha1.LicenseRequest)
 	fmt.Println(user.GetName())
 
-	//extra := make(map[string]proxyv1alpha1.ExtraValue)
-	//for k, v := range user.GetExtra() {
-	//	extra[k] = v
-	//}
-	req.Response = &proxyv1alpha1.LicenseRequestResponse{}
+	l, err := r.getLicense(req.Request.Features)
+	if err != nil {
+		return nil, err
+	}
+
+	r.rb.Record(l.ID, strings.Join(req.Request.Features, ","), user)
+
+	req.Response = &proxyv1alpha1.LicenseRequestResponse{
+		Contract: nil,
+		License:  string(l.Data),
+	}
 	return req, nil
+}
+
+func (r *Storage) getLicense(features []string) (*v1alpha1.License, error) {
+	for _, feature := range features {
+		l, ok := r.reg.LicenseForFeature(feature)
+		if ok {
+			return l, nil
+		}
+	}
+	nl, err := r.lc.AcquireLicense(features)
+	if err != nil {
+		return nil, err
+	}
+	l, err := verifier.ParseLicense(verifier.ParserOptions{
+		ClusterUID: r.cid,
+		CACert:     r.caCert,
+		License:    nl,
+	})
+	if err != nil {
+		return nil, err
+	}
+	r.reg.Add(l)
+	return &l, nil
 }
