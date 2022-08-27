@@ -35,9 +35,6 @@ import (
 	"k8s.io/apiserver/pkg/util/feature"
 	ou "kmodules.xyz/client-go/openapi"
 	"kmodules.xyz/client-go/tools/clientcmd"
-	auditorv1alpha1 "kmodules.xyz/custom-resources/apis/auditor/v1alpha1"
-	corev1alpha1 "kmodules.xyz/resource-metadata/apis/core/v1alpha1"
-	rsapi "kmodules.xyz/resource-metadata/apis/meta/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -61,7 +58,6 @@ func NewUIServerOptions(out, errOut io.Writer) *LicenseProxyServerOptions {
 			defaultEtcdPathPrefix,
 			apiserver.Codecs.LegacyCodec(
 				proxyv1alpha1.SchemeGroupVersion,
-				corev1alpha1.GroupVersion,
 			),
 		),
 		ExtraOptions: NewExtraOptions(),
@@ -105,37 +101,19 @@ func (o *LicenseProxyServerOptions) Config() (*apiserver.Config, error) {
 
 	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(
 		ou.GetDefinitions(
-			auditorv1alpha1.GetOpenAPIDefinitions,
 			proxyv1alpha1.GetOpenAPIDefinitions,
-			corev1alpha1.GetOpenAPIDefinitions,
 		),
 		openapi.NewDefinitionNamer(apiserver.Scheme))
 	serverConfig.OpenAPIConfig.Info.Title = "proxyserver"
 	serverConfig.OpenAPIConfig.Info.Version = v.Version.Version
 	serverConfig.OpenAPIConfig.IgnorePrefixes = []string{
 		"/swaggerapi",
-		fmt.Sprintf("/apis/%s/%s", rsapi.SchemeGroupVersion, rsapi.ResourceResourceDescriptors),
-		fmt.Sprintf("/apis/%s/%s", rsapi.SchemeGroupVersion, rsapi.ResourceResourceGraphs),
-		fmt.Sprintf("/apis/%s/%s", rsapi.SchemeGroupVersion, rsapi.ResourceRenders),
-		fmt.Sprintf("/apis/%s/%s", rsapi.SchemeGroupVersion, rsapi.ResourceResourceQueries),
-		fmt.Sprintf("/apis/%s/%s", rsapi.SchemeGroupVersion, rsapi.ResourceRenderRawGraphs),
-		fmt.Sprintf("/apis/%s/%s", rsapi.SchemeGroupVersion, rsapi.ResourceRenderDashboards),
-		fmt.Sprintf("/apis/%s/%s", rsapi.SchemeGroupVersion, rsapi.ResourceResourceBlockDefinitions),
-		fmt.Sprintf("/apis/%s/%s", rsapi.SchemeGroupVersion, rsapi.ResourceResourceBlockDefinitions),
-		fmt.Sprintf("/apis/%s/%s", rsapi.SchemeGroupVersion, rsapi.ResourceResourceLayouts),
-		fmt.Sprintf("/apis/%s/%s", rsapi.SchemeGroupVersion, rsapi.ResourceResourceOutlines),
-		fmt.Sprintf("/apis/%s/%s", rsapi.SchemeGroupVersion, rsapi.ResourceResourceTableDefinitions),
-
-		fmt.Sprintf("/apis/%s/%s", rsapi.SchemeGroupVersion, rsapi.ResourceRenderMenus),
-		fmt.Sprintf("/apis/%s/%s", rsapi.SchemeGroupVersion, rsapi.ResourceMenus),
-		fmt.Sprintf("/apis/%s/%s", rsapi.SchemeGroupVersion, "usermenus"),
-
-		fmt.Sprintf("/apis/%s/%s", auditorv1alpha1.SchemeGroupVersion, auditorv1alpha1.ResourceSiteInfos),
+		fmt.Sprintf("/apis/%s/%s", proxyv1alpha1.SchemeGroupVersion, proxyv1alpha1.ResourceLicenseRequests),
+		fmt.Sprintf("/apis/%s/%s", proxyv1alpha1.SchemeGroupVersion, proxyv1alpha1.ResourceLicenseStatuses),
 	}
 
 	extraConfig := apiserver.ExtraConfig{
 		ClientConfig: serverConfig.ClientConfig,
-		LicenseFile:  o.ExtraOptions.LicenseFile,
 	}
 	if err := o.ExtraOptions.ApplyTo(&extraConfig); err != nil {
 		return nil, err

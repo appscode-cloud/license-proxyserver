@@ -23,9 +23,12 @@ import (
 )
 
 type ExtraOptions struct {
-	QPS         float64
-	Burst       int
-	LicenseFile string
+	QPS   float64
+	Burst int
+
+	BaseURL    string
+	Token      string
+	LicenseDir string
 }
 
 func NewExtraOptions() *ExtraOptions {
@@ -38,11 +41,15 @@ func NewExtraOptions() *ExtraOptions {
 func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.Float64Var(&s.QPS, "qps", s.QPS, "The maximum QPS to the master from this client")
 	fs.IntVar(&s.Burst, "burst", s.Burst, "The maximum burst for throttle")
-	fs.StringVar(&s.LicenseFile, "license-file", s.LicenseFile, "Path to license file")
+	fs.StringVar(&s.BaseURL, "baseURL", s.BaseURL, "License server base url")
+	fs.StringVar(&s.Token, "token", s.Token, "License server token")
+	fs.StringVar(&s.LicenseDir, "license-dir", s.LicenseDir, "Path to license directory")
 }
 
 func (s *ExtraOptions) ApplyTo(cfg *apiserver.ExtraConfig) error {
-	cfg.LicenseFile = s.LicenseFile
+	cfg.BaseURL = s.BaseURL
+	cfg.Token = s.Token
+	cfg.LicenseDir = s.LicenseDir
 	cfg.ClientConfig.QPS = float32(s.QPS)
 	cfg.ClientConfig.Burst = s.Burst
 

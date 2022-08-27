@@ -36,11 +36,36 @@ spec:
             properties:
               feature:
                 type: string
-              serviceAccountName:
-                type: string
+              user:
+                description: Result contains extra details into why an admission request
+                  was denied. This field IS NOT consulted in any way if "Allowed"
+                  is "true".
+                properties:
+                  extra:
+                    additionalProperties:
+                      description: ExtraValue masks the value so protobuf can generate
+                      items:
+                        type: string
+                      type: array
+                    description: Any additional information provided by the authenticator.
+                    type: object
+                  groups:
+                    description: The names of groups this user is a part of.
+                    items:
+                      type: string
+                    type: array
+                  uid:
+                    description: A unique value that identifies this user across time.
+                      If this user is deleted and another user by the same name is
+                      added, they will have different UIDs.
+                    type: string
+                  username:
+                    description: The name that uniquely identifies this user among
+                      all active users.
+                    type: string
+                type: object
             required:
             - feature
-            - serviceAccountName
             type: object
           status:
             description: LicenseStatusStatus defines the status of License
@@ -89,6 +114,11 @@ spec:
                   reason:
                     type: string
                   status:
+                    enum:
+                    - unknown
+                    - active
+                    - invalid
+                    - canceled
                     type: string
                   tierName:
                     type: string

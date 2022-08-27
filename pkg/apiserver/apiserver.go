@@ -25,6 +25,9 @@ import (
 	proxyserverv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
 	"go.bytebuilders.dev/license-proxyserver/pkg/registry/proxyserver/licenserequest"
 	"go.bytebuilders.dev/license-proxyserver/pkg/registry/proxyserver/licensestatus"
+	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
+	licenseclient "go.bytebuilders.dev/license-verifier/client"
+	"go.bytebuilders.dev/license-verifier/info"
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,11 +38,9 @@ import (
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
-	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/klog/v2/klogr"
-	"kmodules.xyz/authorizer/rbac"
 	cu "kmodules.xyz/client-go/client"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -76,7 +77,9 @@ func init() {
 // ExtraConfig holds custom apiserver config
 type ExtraConfig struct {
 	ClientConfig *restclient.Config
-	LicenseFile  string
+	BaseURL      string
+	Token        string
+	LicenseDir   string
 }
 
 // Config defines the config for the apiserver
@@ -143,30 +146,36 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to start manager, reason: %v", err)
 	}
-	ctrlClient := mgr.GetClient()
-	disco, err := kubernetes.NewForConfig(mgr.GetConfig())
-	if err != nil {
-		return nil, fmt.Errorf("unable to create discovery client, reason: %v", err)
-	}
 
 	cid, err := cu.ClusterUID(mgr.GetAPIReader())
 	if err != nil {
 		return nil, err
 	}
 
-	rbacAuthorizer := rbac.NewForManagerOrDie(ctx, mgr)
+	caData, err := info.LoadLicenseCA()
+	if err != nil {
+		return nil, err
+	}
+	caCert, err := info.ParseCertificate(caData)
+	if err != nil {
+		return nil, err
+	}
+	lc, err := licenseclient.NewClient(c.ExtraConfig.BaseURL, c.ExtraConfig.Token, cid)
+	if err != nil {
+		return nil, err
+	}
 
-	//if err := mgr.Add(manager.RunnableFunc(graph.PollNewResourceTypes(cfg))); err != nil {
-	//	setupLog.Error(err, "unable to set up resource poller")
-	//	os.Exit(1)
-	//}
-	//
-	//if err := mgr.Add(manager.RunnableFunc(graph.SetupGraphReconciler(mgr))); err != nil {
-	//	setupLog.Error(err, "unable to set up resource reconciler configurator")
-	//	os.Exit(1)
-	//}
+	rb := storage.NewRecordBook()
+	var reg *storage.LicenseRegistry
+	if c.ExtraConfig.LicenseDir != "" {
+		reg, err = storage.LoadDir(cid, c.ExtraConfig.LicenseDir, rb)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		reg = storage.NewLicenseRegistry(rb)
+	}
 
-	fmt.Println(ctrlClient, disco, cid, rbacAuthorizer)
 	setupLog.Info("setup done!")
 
 	s := &LicenseProxyServer{
@@ -177,8 +186,8 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(proxyserver.GroupName, Scheme, metav1.ParameterCodec, Codecs)
 
 		v1alpha1storage := map[string]rest.Storage{}
-		v1alpha1storage[proxyserverv1alpha1.ResourceLicenseRequests] = licenserequest.NewStorage()
-		v1alpha1storage[proxyserverv1alpha1.ResourceLicenseStatuses] = licensestatus.NewStorage()
+		v1alpha1storage[proxyserverv1alpha1.ResourceLicenseRequests] = licenserequest.NewStorage(cid, caCert, lc, reg, rb)
+		v1alpha1storage[proxyserverv1alpha1.ResourceLicenseStatuses] = licensestatus.NewStorage(reg, rb)
 		apiGroupInfo.VersionedResourcesStorageMap["v1alpha1"] = v1alpha1storage
 
 		if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {

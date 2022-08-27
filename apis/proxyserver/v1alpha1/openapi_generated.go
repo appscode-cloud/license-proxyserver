@@ -42,6 +42,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1.LicenseStatusList":      schema_license_proxyserver_apis_proxyserver_v1alpha1_LicenseStatusList(ref),
 		"go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1.LicenseStatusSpec":      schema_license_proxyserver_apis_proxyserver_v1alpha1_LicenseStatusSpec(ref),
 		"go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1.LicenseStatusStatus":    schema_license_proxyserver_apis_proxyserver_v1alpha1_LicenseStatusStatus(ref),
+		"go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1.UserInfo":               schema_license_proxyserver_apis_proxyserver_v1alpha1_UserInfo(ref),
 		"k8s.io/api/apps/v1.ControllerRevision":                                                    schema_k8sio_api_apps_v1_ControllerRevision(ref),
 		"k8s.io/api/apps/v1.ControllerRevisionList":                                                schema_k8sio_api_apps_v1_ControllerRevisionList(ref),
 		"k8s.io/api/apps/v1.DaemonSet":                                                             schema_k8sio_api_apps_v1_DaemonSet(ref),
@@ -351,9 +352,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kmodules.xyz/client-go/api/v1.CertificateSpec":                                            schema_kmodulesxyz_client_go_api_v1_CertificateSpec(ref),
 		"kmodules.xyz/client-go/api/v1.ClusterMetadata":                                            schema_kmodulesxyz_client_go_api_v1_ClusterMetadata(ref),
 		"kmodules.xyz/client-go/api/v1.Condition":                                                  schema_kmodulesxyz_client_go_api_v1_Condition(ref),
+		"kmodules.xyz/client-go/api/v1.HealthCheckSpec":                                            schema_kmodulesxyz_client_go_api_v1_HealthCheckSpec(ref),
 		"kmodules.xyz/client-go/api/v1.ObjectID":                                                   schema_kmodulesxyz_client_go_api_v1_ObjectID(ref),
 		"kmodules.xyz/client-go/api/v1.ObjectInfo":                                                 schema_kmodulesxyz_client_go_api_v1_ObjectInfo(ref),
 		"kmodules.xyz/client-go/api/v1.ObjectReference":                                            schema_kmodulesxyz_client_go_api_v1_ObjectReference(ref),
+		"kmodules.xyz/client-go/api/v1.ReadonlyHealthCheckSpec":                                    schema_kmodulesxyz_client_go_api_v1_ReadonlyHealthCheckSpec(ref),
 		"kmodules.xyz/client-go/api/v1.ResourceID":                                                 schema_kmodulesxyz_client_go_api_v1_ResourceID(ref),
 		"kmodules.xyz/client-go/api/v1.TLSConfig":                                                  schema_kmodulesxyz_client_go_api_v1_TLSConfig(ref),
 		"kmodules.xyz/client-go/api/v1.TimeOfDay":                                                  schema_kmodulesxyz_client_go_api_v1_TimeOfDay(ref),
@@ -369,18 +372,17 @@ func schema_license_proxyserver_apis_proxyserver_v1alpha1_Contract(ref common.Re
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"name": {
+					"id": {
 						SchemaProps: spec.SchemaProps{
 							Default: "",
 							Type:    []string{"string"},
 							Format:  "",
 						},
 					},
-					"product": {
+					"startTimestamp": {
 						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
 					"expiryTimestamp": {
@@ -390,7 +392,7 @@ func schema_license_proxyserver_apis_proxyserver_v1alpha1_Contract(ref common.Re
 						},
 					},
 				},
-				Required: []string{"name", "product", "expiryTimestamp"},
+				Required: []string{"id", "startTimestamp", "expiryTimestamp"},
 			},
 		},
 		Dependencies: []string{
@@ -473,8 +475,7 @@ func schema_license_proxyserver_apis_proxyserver_v1alpha1_LicenseRequestResponse
 				Properties: map[string]spec.Schema{
 					"contract": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1.Contract"),
+							Ref: ref("go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1.Contract"),
 						},
 					},
 					"license": {
@@ -485,7 +486,7 @@ func schema_license_proxyserver_apis_proxyserver_v1alpha1_LicenseRequestResponse
 						},
 					},
 				},
-				Required: []string{"contract", "license"},
+				Required: []string{"license"},
 			},
 		},
 		Dependencies: []string{
@@ -603,17 +604,18 @@ func schema_license_proxyserver_apis_proxyserver_v1alpha1_LicenseStatusSpec(ref 
 							Format:  "",
 						},
 					},
-					"serviceAccountName": {
+					"user": {
 						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
+							Description: "Result contains extra details into why an admission request was denied. This field IS NOT consulted in any way if \"Allowed\" is \"true\".",
+							Ref:         ref("go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1.UserInfo"),
 						},
 					},
 				},
-				Required: []string{"feature", "serviceAccountName"},
+				Required: []string{"feature"},
 			},
 		},
+		Dependencies: []string{
+			"go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1.UserInfo"},
 	}
 }
 
@@ -636,6 +638,71 @@ func schema_license_proxyserver_apis_proxyserver_v1alpha1_LicenseStatusStatus(re
 		},
 		Dependencies: []string{
 			"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1.License"},
+	}
+}
+
+func schema_license_proxyserver_apis_proxyserver_v1alpha1_UserInfo(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "UserInfo holds the information about the user needed to implement the user.Info interface.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"username": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The name that uniquely identifies this user among all active users.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"uid": {
+						SchemaProps: spec.SchemaProps{
+							Description: "A unique value that identifies this user across time. If this user is deleted and another user by the same name is added, they will have different UIDs.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"groups": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The names of groups this user is a part of.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"extra": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Any additional information provided by the authenticator.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type: []string{"array"},
+										Items: &spec.SchemaOrArray{
+											Schema: &spec.Schema{
+												SchemaProps: spec.SchemaProps{
+													Default: "",
+													Type:    []string{"string"},
+													Format:  "",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -17271,6 +17338,47 @@ func schema_kmodulesxyz_client_go_api_v1_Condition(ref common.ReferenceCallback)
 	}
 }
 
+func schema_kmodulesxyz_client_go_api_v1_HealthCheckSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HealthCheckSpec defines attributes of the health check",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"periodSeconds": {
+						SchemaProps: spec.SchemaProps{
+							Description: "How often (in seconds) to perform the health check. Default to 10 seconds. Minimum value is 1.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"timeoutSeconds": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Number of seconds after which the probe times out. Defaults to 10 second. Minimum value is 1. It should be less than the periodSeconds.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"failureThreshold": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Minimum consecutive failures for the health check to be considered failed after having succeeded. Defaults to 1. Minimum value is 1.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"disableWriteCheck": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Whether to disable write check on database. Defaults to false.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_kmodulesxyz_client_go_api_v1_ObjectID(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -17358,6 +17466,40 @@ func schema_kmodulesxyz_client_go_api_v1_ObjectReference(ref common.ReferenceCal
 					},
 				},
 				Required: []string{"name"},
+			},
+		},
+	}
+}
+
+func schema_kmodulesxyz_client_go_api_v1_ReadonlyHealthCheckSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ReadonlyHealthCheckSpec defines attributes of the health check using only read-only checks",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"periodSeconds": {
+						SchemaProps: spec.SchemaProps{
+							Description: "How often (in seconds) to perform the health check. Default to 10 seconds. Minimum value is 1.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"timeoutSeconds": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Number of seconds after which the probe times out. Defaults to 10 second. Minimum value is 1. It should be less than the periodSeconds.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"failureThreshold": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Minimum consecutive failures for the health check to be considered failed after having succeeded. Defaults to 1. Minimum value is 1.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+				},
 			},
 		},
 	}

@@ -2,7 +2,7 @@ domain: k8s.appscode.com
 layout:
 - go.kubebuilder.io/v3
 multigroup: true
-projectName: ui-server
+projectName: license-proxyserver
 repo: go.bytebuilders.dev/license-proxyserver
 resources:
 - api:
