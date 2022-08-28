@@ -32,7 +32,11 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 )
 
-// Adapted from: https://github.com/kubernetes/apiserver/blob/master/pkg/registry/rest/table.go
+/*
+Adapted from:
+  - https://github.com/kubernetes/apiserver/blob/master/pkg/registry/rest/table.go
+  - https://github.com/kubernetes/kubernetes/blob/v1.25.0/pkg/printers/internalversion/printers.go#L190-L198
+*/
 
 type defaultTableConvertor struct {
 	defaultQualifiedResource schema.GroupResource
@@ -114,18 +118,6 @@ func (c defaultTableConvertor) ConvertToTable(ctx context.Context, object runtim
 	}
 	return &table, nil
 }
-
-/*
-https://github.com/kubernetes/kubernetes/blob/759785ea147bc13945d521eaba4a6592cbc0675f/pkg/printers/internalversion/printers.go#L193
-
-	{Name: "Name", Type: "string", Format: "name", Description: metav1.ObjectMeta{}.SwaggerDoc()["name"]},
-	{Name: "Type", Type: "string", Description: apiv1.ServiceSpec{}.SwaggerDoc()["type"]},
-	{Name: "Cluster-IP", Type: "string", Description: apiv1.ServiceSpec{}.SwaggerDoc()["clusterIP"]},
-	{Name: "External-IP", Type: "string", Description: apiv1.ServiceSpec{}.SwaggerDoc()["externalIPs"]},
-	{Name: "Port(s)", Type: "string", Description: apiv1.ServiceSpec{}.SwaggerDoc()["ports"]},
-	{Name: "Age", Type: "string", Description: metav1.ObjectMeta{}.SwaggerDoc()["creationTimestamp"]},
-	{Name: "Selector", Type: "string", Priority: 1, Description: apiv1.ServiceSpec{}.SwaggerDoc()["selector"]},
-*/
 
 // errNotAcceptable indicates the resource doesn't support Table conversion
 type errNotAcceptable struct {
