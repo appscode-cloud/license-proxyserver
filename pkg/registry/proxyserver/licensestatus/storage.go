@@ -50,7 +50,7 @@ func NewStorage(reg *storage.LicenseRegistry, rb *storage.RecordBook) *Storage {
 	s := &Storage{
 		reg: reg,
 		rb:  rb,
-		convertor: rest.NewDefaultTableConvertor(schema.GroupResource{
+		convertor: NewDefaultTableConvertor(schema.GroupResource{
 			Group:    proxyserver.GroupName,
 			Resource: proxyv1alpha1.ResourceLicenseStatuses,
 		}),
