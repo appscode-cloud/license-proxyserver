@@ -25,7 +25,7 @@ import (
 	"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
 )
 
-const minLife = 10 * time.Minute
+const minRemainingLife = 10 * time.Minute
 
 // A LicenseQueue implements heap.Interface and holds Items.
 type LicenseQueue []*v1alpha1.License
@@ -54,26 +54,31 @@ func (pq *LicenseQueue) Pop() any {
 	return item
 }
 
+type Record struct {
+	License  v1alpha1.License
+	Contract *v1alpha1.Contract
+}
+
 type LicenseRegistry struct {
 	m     sync.Mutex
-	reg   map[string]LicenseQueue      // feature -> heap
-	store map[string]*v1alpha1.License // serial # -> License
+	reg   map[string]LicenseQueue // feature -> heap
+	store map[string]*Record      // serial # -> Record
 	rb    *RecordBook
 }
 
 func NewLicenseRegistry(rb *RecordBook) *LicenseRegistry {
 	return &LicenseRegistry{
 		reg:   make(map[string]LicenseQueue),
-		store: make(map[string]*v1alpha1.License),
+		store: make(map[string]*Record),
 		rb:    rb,
 	}
 }
 
-func (r *LicenseRegistry) Add(l v1alpha1.License) {
+func (r *LicenseRegistry) Add(l v1alpha1.License, c *v1alpha1.Contract) {
 	r.m.Lock()
 	defer r.m.Unlock()
 
-	r.store[l.ID] = &l
+	r.store[l.ID] = &Record{License: l, Contract: c}
 	for _, feature := range l.Features {
 		q, ok := r.reg[feature]
 		if !ok {
@@ -96,7 +101,7 @@ func (r *LicenseRegistry) LicenseForFeature(feature string) (*v1alpha1.License, 
 	if !ok {
 		return nil, false
 	}
-	now := time.Now().Add(minLife)
+	now := time.Now().Add(minRemainingLife)
 	for q.Len() > 0 {
 		// ref: https://stackoverflow.com/a/63328950
 		item := q[0]
@@ -114,7 +119,7 @@ func (r *LicenseRegistry) LicenseForFeature(feature string) (*v1alpha1.License, 
 	return nil, false
 }
 
-func (r *LicenseRegistry) Get(id string) (*v1alpha1.License, bool) {
+func (r *LicenseRegistry) Get(id string) (*Record, bool) {
 	r.m.Lock()
 	defer r.m.Unlock()
 
@@ -122,19 +127,19 @@ func (r *LicenseRegistry) Get(id string) (*v1alpha1.License, bool) {
 	return q, ok
 }
 
-func (r *LicenseRegistry) List() []v1alpha1.License {
+func (r *LicenseRegistry) List() []Record {
 	r.m.Lock()
 	defer r.m.Unlock()
 
-	now := time.Now().Add(minLife)
-	out := make([]v1alpha1.License, 0, len(r.store))
-	for _, rl := range r.store {
-		if rl.NotAfter.After(now) {
-			out = append(out, *rl)
+	now := time.Now().Add(minRemainingLife)
+	out := make([]Record, 0, len(r.store))
+	for _, rec := range r.store {
+		if rec.License.NotAfter.After(now) {
+			out = append(out, *rec)
 		}
 	}
 	sort.Slice(out, func(i, j int) bool {
-		return out[i].Less(out[j])
+		return out[i].License.Less(out[j].License)
 	})
 	return out
 }

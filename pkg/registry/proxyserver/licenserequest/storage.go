@@ -19,7 +19,6 @@ package licenserequest
 import (
 	"context"
 	"crypto/x509"
-	"strings"
 
 	proxyv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
 	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
@@ -84,11 +83,10 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 		return nil, err
 	}
 
-	r.rb.Record(l.ID, strings.Join(req.Request.Features, ","), user)
+	r.rb.Record(l.ID, req.Request.Features, user)
 
 	req.Response = &proxyv1alpha1.LicenseRequestResponse{
-		Contract: nil,
-		License:  string(l.Data),
+		License: string(l.Data),
 	}
 	return req, nil
 }
@@ -100,7 +98,7 @@ func (r *Storage) getLicense(features []string) (*v1alpha1.License, error) {
 			return l, nil
 		}
 	}
-	nl, err := r.lc.AcquireLicense(features)
+	nl, c, err := r.lc.AcquireLicense(features)
 	if err != nil {
 		return nil, err
 	}
@@ -112,6 +110,6 @@ func (r *Storage) getLicense(features []string) (*v1alpha1.License, error) {
 	if err != nil {
 		return nil, err
 	}
-	r.reg.Add(l)
+	r.reg.Add(l, c)
 	return &l, nil
 }

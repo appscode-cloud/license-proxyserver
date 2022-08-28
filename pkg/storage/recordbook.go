@@ -35,7 +35,7 @@ func NewRecordBook() *RecordBook {
 	}
 }
 
-func (r *RecordBook) Record(id, feature string, user user.Info) {
+func (r *RecordBook) Record(id string, features []string, user user.Info) {
 	r.m.Lock()
 	defer r.m.Unlock()
 
@@ -44,7 +44,7 @@ func (r *RecordBook) Record(id, feature string, user user.Info) {
 		extra[k] = v
 	}
 	r.reg[id] = &proxyserver.LicenseStatusSpec{
-		Feature: feature,
+		Feature: features,
 		User: &proxyserver.UserInfo{
 			Username: user.GetName(),
 			UID:      user.GetUID(),

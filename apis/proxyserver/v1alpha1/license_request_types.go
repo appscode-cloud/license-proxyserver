@@ -47,12 +47,5 @@ type LicenseRequestRequest struct {
 }
 
 type LicenseRequestResponse struct {
-	Contract *Contract `json:"contract,omitempty"`
-	License  string    `json:"license"`
-}
-
-type Contract struct {
-	ID              string      `json:"id"`
-	StartTimestamp  metav1.Time `json:"startTimestamp"`
-	ExpiryTimestamp metav1.Time `json:"expiryTimestamp"`
+	License string `json:"license"`
 }
