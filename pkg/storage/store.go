@@ -86,7 +86,7 @@ func (r *LicenseRegistry) Add(l *v1alpha1.License, c *v1alpha1.Contract) {
 		return
 	}
 
-	r.store[l.ID] = &Record{License: l, Contract: c}
+	r.addToStore(l, c)
 	for _, feature := range l.Features {
 		q, ok := r.reg[feature]
 		if !ok {
