@@ -110,6 +110,6 @@ func (r *Storage) getLicense(features []string) (*v1alpha1.License, error) {
 	if err != nil {
 		return nil, err
 	}
-	r.reg.Add(l, c)
+	r.reg.Add(&l, c)
 	return &l, nil
 }

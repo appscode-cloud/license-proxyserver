@@ -80,6 +80,7 @@ type ExtraConfig struct {
 	BaseURL      string
 	Token        string
 	LicenseDir   string
+	CacheDir     string
 }
 
 // Config defines the config for the apiserver
@@ -166,14 +167,18 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 	}
 
 	rb := storage.NewRecordBook()
-	var reg *storage.LicenseRegistry
+	reg := storage.NewLicenseRegistry(c.ExtraConfig.CacheDir, rb)
 	if c.ExtraConfig.LicenseDir != "" {
-		reg, err = storage.LoadDir(cid, c.ExtraConfig.LicenseDir, rb)
+		err = storage.LoadDir(cid, c.ExtraConfig.LicenseDir, reg)
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		reg = storage.NewLicenseRegistry(rb)
+	}
+	if c.ExtraConfig.CacheDir != "" {
+		err = storage.LoadDir(cid, c.ExtraConfig.CacheDir, reg)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	setupLog.Info("setup done!")

@@ -27,21 +27,19 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func LoadDir(cid, dir string, rb *RecordBook) (*LicenseRegistry, error) {
+func LoadDir(cid, dir string, reg *LicenseRegistry) error {
 	caData, err := info.LoadLicenseCA()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	caCert, err := info.ParseCertificate(caData)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	reg := NewLicenseRegistry(rb)
 
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read dir %s", dir)
+		return errors.Wrapf(err, "failed to read dir %s", dir)
 	}
 	for _, entry := range entries {
 		if entry.IsDir() {
@@ -51,7 +49,7 @@ func LoadDir(cid, dir string, rb *RecordBook) (*LicenseRegistry, error) {
 		filename := filepath.Join(dir, entry.Name())
 		data, err := os.ReadFile(filename)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to load file %s", filename)
+			return errors.Wrapf(err, "failed to load file %s", filename)
 		}
 
 		license, err := verifier.ParseLicense(verifier.ParserOptions{
@@ -63,8 +61,8 @@ func LoadDir(cid, dir string, rb *RecordBook) (*LicenseRegistry, error) {
 			klog.ErrorS(err, "Skipping", "file", filename)
 			continue
 		} else {
-			reg.Add(license, nil)
+			reg.Add(&license, nil)
 		}
 	}
-	return reg, nil
+	return nil
 }

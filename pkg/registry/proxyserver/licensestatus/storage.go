@@ -98,11 +98,11 @@ func (r *Storage) Get(ctx context.Context, name string, options *metav1.GetOptio
 			Resource: proxyv1alpha1.ResourceLicenseStatuses,
 		}, name)
 	}
-	out := r.toLicenseStatus(*rec)
+	out := r.toLicenseStatus(rec)
 	return &out, nil
 }
 
-func (r *Storage) toLicenseStatus(rec storage.Record) proxyv1alpha1.LicenseStatus {
+func (r *Storage) toLicenseStatus(rec *storage.Record) proxyv1alpha1.LicenseStatus {
 	item := proxyv1alpha1.LicenseStatus{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -112,7 +112,7 @@ func (r *Storage) toLicenseStatus(rec storage.Record) proxyv1alpha1.LicenseStatu
 		},
 		Spec: proxyv1alpha1.LicenseStatusSpec{},
 		Status: proxyv1alpha1.LicenseStatusStatus{
-			License:  rec.License,
+			License:  *rec.License,
 			Contract: rec.Contract,
 		},
 	}

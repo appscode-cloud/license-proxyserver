@@ -29,6 +29,7 @@ type ExtraOptions struct {
 	BaseURL    string
 	Token      string
 	LicenseDir string
+	CacheDir   string
 }
 
 func NewExtraOptions() *ExtraOptions {
@@ -44,12 +45,14 @@ func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.BaseURL, "baseURL", s.BaseURL, "License server base url")
 	fs.StringVar(&s.Token, "token", s.Token, "License server token")
 	fs.StringVar(&s.LicenseDir, "license-dir", s.LicenseDir, "Path to license directory")
+	fs.StringVar(&s.CacheDir, "cache-dir", s.CacheDir, "Path to license cache directory")
 }
 
 func (s *ExtraOptions) ApplyTo(cfg *apiserver.ExtraConfig) error {
 	cfg.BaseURL = s.BaseURL
 	cfg.Token = s.Token
 	cfg.LicenseDir = s.LicenseDir
+	cfg.CacheDir = s.CacheDir
 	cfg.ClientConfig.QPS = float32(s.QPS)
 	cfg.ClientConfig.Burst = s.Burst
 

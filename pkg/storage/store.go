@@ -18,6 +18,8 @@ package storage
 
 import (
 	"container/heap"
+	"os"
+	"path/filepath"
 	"sort"
 	"sync"
 	"time"
@@ -33,7 +35,7 @@ type LicenseQueue []*v1alpha1.License
 func (pq LicenseQueue) Len() int { return len(pq) }
 
 func (pq LicenseQueue) Less(i, j int) bool {
-	return pq[i].Less(*pq[j])
+	return pq[i].Less(pq[j])
 }
 
 func (pq LicenseQueue) Swap(i, j int) {
@@ -55,40 +57,46 @@ func (pq *LicenseQueue) Pop() any {
 }
 
 type Record struct {
-	License  v1alpha1.License
+	License  *v1alpha1.License
 	Contract *v1alpha1.Contract
 }
 
 type LicenseRegistry struct {
-	m     sync.Mutex
-	reg   map[string]LicenseQueue // feature -> heap
-	store map[string]*Record      // serial # -> Record
-	rb    *RecordBook
+	m        sync.Mutex
+	reg      map[string]LicenseQueue // feature -> heap
+	store    map[string]*Record      // serial # -> Record
+	rb       *RecordBook
+	cacheDir string
 }
 
-func NewLicenseRegistry(rb *RecordBook) *LicenseRegistry {
+func NewLicenseRegistry(cacheDir string, rb *RecordBook) *LicenseRegistry {
 	return &LicenseRegistry{
-		reg:   make(map[string]LicenseQueue),
-		store: make(map[string]*Record),
-		rb:    rb,
+		cacheDir: cacheDir,
+		reg:      make(map[string]LicenseQueue),
+		store:    make(map[string]*Record),
+		rb:       rb,
 	}
 }
 
-func (r *LicenseRegistry) Add(l v1alpha1.License, c *v1alpha1.Contract) {
+func (r *LicenseRegistry) Add(l *v1alpha1.License, c *v1alpha1.Contract) {
 	r.m.Lock()
 	defer r.m.Unlock()
+
+	if _, ok := r.store[l.ID]; ok {
+		return
+	}
 
 	r.store[l.ID] = &Record{License: l, Contract: c}
 	for _, feature := range l.Features {
 		q, ok := r.reg[feature]
 		if !ok {
 			q := make(LicenseQueue, 1)
-			q[0] = &l
+			q[0] = l
 			// heap.Init(&q) // not needed?
 			r.reg[feature] = q
 			continue
 		}
-		heap.Push(&q, &l)
+		heap.Push(&q, l)
 		r.reg[feature] = q
 	}
 }
@@ -108,15 +116,29 @@ func (r *LicenseRegistry) LicenseForFeature(feature string) (*v1alpha1.License, 
 		if now.After(item.NotAfter.Time) {
 			heap.Pop(&q)
 			r.reg[feature] = q
-			delete(r.store, item.ID)
-			if r.rb != nil {
-				r.rb.Delete(item.ID)
-			}
+			r.removeFromStore(item)
 		} else {
 			return item, true
 		}
 	}
 	return nil, false
+}
+
+func (r *LicenseRegistry) addToStore(l *v1alpha1.License, c *v1alpha1.Contract) {
+	r.store[l.ID] = &Record{License: l, Contract: c}
+	if r.cacheDir != "" {
+		_ = os.WriteFile(filepath.Join(r.cacheDir, l.ID), l.Data, 0o644)
+	}
+}
+
+func (r *LicenseRegistry) removeFromStore(l *v1alpha1.License) {
+	delete(r.store, l.ID)
+	if r.rb != nil {
+		r.rb.Delete(l.ID)
+	}
+	if r.cacheDir != "" {
+		_ = os.Remove(filepath.Join(r.cacheDir, l.ID))
+	}
 }
 
 func (r *LicenseRegistry) Get(id string) (*Record, bool) {
@@ -127,15 +149,15 @@ func (r *LicenseRegistry) Get(id string) (*Record, bool) {
 	return q, ok
 }
 
-func (r *LicenseRegistry) List() []Record {
+func (r *LicenseRegistry) List() []*Record {
 	r.m.Lock()
 	defer r.m.Unlock()
 
 	now := time.Now().Add(minRemainingLife)
-	out := make([]Record, 0, len(r.store))
+	out := make([]*Record, 0, len(r.store))
 	for _, rec := range r.store {
 		if rec.License.NotAfter.After(now) {
-			out = append(out, *rec)
+			out = append(out, rec)
 		}
 	}
 	sort.Slice(out, func(i, j int) bool {
