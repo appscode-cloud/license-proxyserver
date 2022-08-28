@@ -32,7 +32,7 @@ const (
 
 // LicenseStatusSpec defines the desired state of License
 type LicenseStatusSpec struct {
-	Feature string `json:"feature"`
+	Feature []string `json:"features"`
 	// Result contains extra details into why an admission request was denied.
 	// This field IS NOT consulted in any way if "Allowed" is "true".
 	// +optional
@@ -69,7 +69,8 @@ func (t ExtraValue) String() string {
 
 // LicenseStatusStatus defines the status of License
 type LicenseStatusStatus struct {
-	License licenseapi.License `json:"license"`
+	Contract *licenseapi.Contract `json:"contract,omitempty"`
+	License  licenseapi.License   `json:"license"`
 }
 
 // +genclient

@@ -34,8 +34,10 @@ spec:
           spec:
             description: LicenseStatusSpec defines the desired state of License
             properties:
-              feature:
-                type: string
+              features:
+                items:
+                  type: string
+                type: array
               user:
                 description: Result contains extra details into why an admission request
                   was denied. This field IS NOT consulted in any way if "Allowed"
@@ -65,11 +67,26 @@ spec:
                     type: string
                 type: object
             required:
-            - feature
+            - features
             type: object
           status:
             description: LicenseStatusStatus defines the status of License
             properties:
+              contract:
+                properties:
+                  expiryTimestamp:
+                    format: date-time
+                    type: string
+                  id:
+                    type: string
+                  startTimestamp:
+                    format: date-time
+                    type: string
+                required:
+                - expiryTimestamp
+                - id
+                - startTimestamp
+                type: object
               license:
                 description: License defines a AppsCode product license info.
                 properties:

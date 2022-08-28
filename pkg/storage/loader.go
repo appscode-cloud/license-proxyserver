@@ -63,7 +63,7 @@ func LoadDir(cid, dir string, rb *RecordBook) (*LicenseRegistry, error) {
 			klog.ErrorS(err, "Skipping", "file", filename)
 			continue
 		} else {
-			reg.Add(license)
+			reg.Add(license, nil)
 		}
 	}
 	return reg, nil

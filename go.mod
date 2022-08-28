@@ -7,7 +7,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/license-verifier v0.11.1-0.20220827213833-8fc2de2a63b5
+	go.bytebuilders.dev/license-verifier v0.11.1-0.20220828154545-2de217f0a4c0
 	gomodules.xyz/logs v0.0.6
 	gomodules.xyz/x v0.0.14
 	k8s.io/api v0.24.2

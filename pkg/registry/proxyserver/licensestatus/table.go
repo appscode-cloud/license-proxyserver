@@ -28,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/duration"
 	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 )
@@ -54,17 +55,23 @@ func (c defaultTableConvertor) ConvertToTable(ctx context.Context, object runtim
 	var table metav1.Table
 	fn := func(obj runtime.Object) error {
 		var (
-			productLine string
-			username    string
-			expiresAt   string
+			productLine          string
+			username             string
+			contractID           string
+			contractEndTimestamp string
+			licenseEndTimestamp  string
 		)
 		if o, ok := obj.(*v1alpha1.LicenseStatus); ok {
 			productLine = o.Status.License.ProductLine
 			if o.Spec.User != nil {
 				username = o.Spec.User.Username
 			}
+			if o.Status.Contract != nil {
+				contractID = o.Status.Contract.ID
+				contractEndTimestamp = convertToHumanReadableDateType(o.Status.Contract.ExpiryTimestamp.Time)
+			}
 			if o.Status.License.NotAfter != nil {
-				expiresAt = o.Status.License.NotAfter.Time.UTC().Format(time.RFC3339)
+				licenseEndTimestamp = convertToHumanReadableDateType(o.Status.License.NotAfter.Time)
 			}
 		}
 
@@ -81,8 +88,9 @@ func (c defaultTableConvertor) ConvertToTable(ctx context.Context, object runtim
 				m.GetName(),
 				productLine,
 				username,
-				expiresAt,
-				m.GetCreationTimestamp().Time.UTC().Format(time.RFC3339),
+				contractID,
+				contractEndTimestamp,
+				licenseEndTimestamp,
 			},
 			Object: runtime.RawExtension{Object: obj},
 		})
@@ -112,8 +120,9 @@ func (c defaultTableConvertor) ConvertToTable(ctx context.Context, object runtim
 			{Name: "Id", Type: "string", Format: "name", Description: swaggerMetadataDescriptions["name"]},
 			{Name: "Product", Type: "string", Description: ""},
 			{Name: "User", Type: "string", Description: ""},
-			{Name: "Expires At", Type: "date", Description: ""},
-			{Name: "Created At", Type: "date", Description: swaggerMetadataDescriptions["creationTimestamp"]},
+			{Name: "Contract", Type: "string", Description: ""},
+			{Name: "Contract Ends", Type: "string", Description: ""},
+			{Name: "Valid For", Type: "string", Description: ""},
 		}
 	}
 	return &table, nil
@@ -135,4 +144,22 @@ func (e errNotAcceptable) Status() metav1.Status {
 		Reason:  metav1.StatusReason("NotAcceptable"),
 		Message: e.Error(),
 	}
+}
+
+// convertToHumanReadableDateType returns the elapsed time since timestamp in
+// human-readable approximation.
+// ref: https://github.com/kubernetes/apimachinery/blob/v0.21.1/pkg/api/meta/table/table.go#L63-L70
+// But works for timestamp before or after now.
+func convertToHumanReadableDateType(timestamp time.Time) string {
+	if timestamp.IsZero() {
+		return "<unknown>"
+	}
+	var d time.Duration
+	now := time.Now()
+	if now.After(timestamp) {
+		d = now.Sub(timestamp)
+	} else {
+		d = timestamp.Sub(now)
+	}
+	return duration.HumanDuration(d)
 }

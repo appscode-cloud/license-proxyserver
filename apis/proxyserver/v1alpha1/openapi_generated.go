@@ -34,7 +34,6 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1.Contract":               schema_license_proxyserver_apis_proxyserver_v1alpha1_Contract(ref),
 		"go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1.LicenseRequest":         schema_license_proxyserver_apis_proxyserver_v1alpha1_LicenseRequest(ref),
 		"go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1.LicenseRequestRequest":  schema_license_proxyserver_apis_proxyserver_v1alpha1_LicenseRequestRequest(ref),
 		"go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1.LicenseRequestResponse": schema_license_proxyserver_apis_proxyserver_v1alpha1_LicenseRequestResponse(ref),
@@ -366,40 +365,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 	}
 }
 
-func schema_license_proxyserver_apis_proxyserver_v1alpha1_Contract(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"id": {
-						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
-						},
-					},
-					"startTimestamp": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
-						},
-					},
-					"expiryTimestamp": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
-						},
-					},
-				},
-				Required: []string{"id", "startTimestamp", "expiryTimestamp"},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
-	}
-}
-
 func schema_license_proxyserver_apis_proxyserver_v1alpha1_LicenseRequest(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -473,11 +438,6 @@ func schema_license_proxyserver_apis_proxyserver_v1alpha1_LicenseRequestResponse
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"contract": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref("go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1.Contract"),
-						},
-					},
 					"license": {
 						SchemaProps: spec.SchemaProps{
 							Default: "",
@@ -489,8 +449,6 @@ func schema_license_proxyserver_apis_proxyserver_v1alpha1_LicenseRequestResponse
 				Required: []string{"license"},
 			},
 		},
-		Dependencies: []string{
-			"go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1.Contract"},
 	}
 }
 
@@ -597,11 +555,18 @@ func schema_license_proxyserver_apis_proxyserver_v1alpha1_LicenseStatusSpec(ref 
 				Description: "LicenseStatusSpec defines the desired state of License",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"feature": {
+					"features": {
 						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
 						},
 					},
 					"user": {
@@ -611,7 +576,7 @@ func schema_license_proxyserver_apis_proxyserver_v1alpha1_LicenseStatusSpec(ref 
 						},
 					},
 				},
-				Required: []string{"feature"},
+				Required: []string{"features"},
 			},
 		},
 		Dependencies: []string{
@@ -626,6 +591,11 @@ func schema_license_proxyserver_apis_proxyserver_v1alpha1_LicenseStatusStatus(re
 				Description: "LicenseStatusStatus defines the status of License",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
+					"contract": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1.Contract"),
+						},
+					},
 					"license": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
@@ -637,7 +607,7 @@ func schema_license_proxyserver_apis_proxyserver_v1alpha1_LicenseStatusStatus(re
 			},
 		},
 		Dependencies: []string{
-			"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1.License"},
+			"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1.Contract", "go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1.License"},
 	}
 }
 
