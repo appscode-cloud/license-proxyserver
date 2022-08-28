@@ -432,6 +432,9 @@ else
 	IMAGE_PULL_SECRETS = --set imagePullSecrets[0].name=$(REGISTRY_SECRET)
 endif
 
+PLATFORM_BASEURL ?= $(PLATFORM_BASEURL)
+PLATFORM_TOKEN   ?= $(PLATFORM_TOKEN)
+
 .PHONY: install
 install:
 	@cd ../installer; \
@@ -440,6 +443,8 @@ install:
 		--set image.registry=$(REGISTRY) \
 		--set image.tag=$(TAG_PROD) \
 		--set imagePullPolicy=$(IMAGE_PULL_POLICY) \
+		--set platform.baseURL=$(PLATFORM_BASEURL) \
+		--set platform.token=$(PLATFORM_TOKEN) \
 		$(IMAGE_PULL_SECRETS); \
 
 .PHONY: uninstall
