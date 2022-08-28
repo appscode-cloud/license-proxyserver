@@ -19,7 +19,6 @@ package licenserequest
 import (
 	"context"
 	"crypto/x509"
-	"fmt"
 	"strings"
 
 	proxyv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
@@ -79,7 +78,6 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 		return nil, apierrors.NewBadRequest("missing user info")
 	}
 	req := obj.(*proxyv1alpha1.LicenseRequest)
-	fmt.Println(user.GetName())
 
 	l, err := r.getLicense(req.Request.Features)
 	if err != nil {

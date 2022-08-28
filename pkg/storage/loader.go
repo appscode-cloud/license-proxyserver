@@ -17,7 +17,6 @@ limitations under the License.
 package storage
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -48,7 +47,7 @@ func LoadDir(cid, dir string, rb *RecordBook) (*LicenseRegistry, error) {
 		if entry.IsDir() {
 			continue
 		}
-		fmt.Println(entry.Name())
+
 		filename := filepath.Join(dir, entry.Name())
 		data, err := os.ReadFile(filename)
 		if err != nil {
