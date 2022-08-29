@@ -71,12 +71,14 @@ func NewUIServerOptions(out, errOut io.Writer) *LicenseProxyServerOptions {
 
 func (o LicenseProxyServerOptions) AddFlags(fs *pflag.FlagSet) {
 	o.RecommendedOptions.AddFlags(fs)
+	o.ExtraOptions.AddFlags(fs)
 }
 
 // Validate validates LicenseProxyServerOptions
 func (o LicenseProxyServerOptions) Validate(args []string) error {
 	var errors []error
 	errors = append(errors, o.RecommendedOptions.Validate()...)
+	errors = append(errors, o.ExtraOptions.Validate()...)
 	return utilerrors.NewAggregate(errors)
 }
 

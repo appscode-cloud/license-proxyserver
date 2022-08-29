@@ -58,3 +58,7 @@ func (s *ExtraOptions) ApplyTo(cfg *apiserver.ExtraConfig) error {
 
 	return nil
 }
+
+func (s *ExtraOptions) Validate() []error {
+	return nil
+}
