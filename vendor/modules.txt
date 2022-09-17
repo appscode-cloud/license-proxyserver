@@ -229,7 +229,7 @@ github.com/yudai/gojsondiff/formatter
 # github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82
 ## explicit
 github.com/yudai/golcs
-# go.bytebuilders.dev/license-verifier v0.11.1-0.20220917043059-0ecd48a27d8c
+# go.bytebuilders.dev/license-verifier v0.12.0
 ## explicit; go 1.18
 go.bytebuilders.dev/license-verifier
 go.bytebuilders.dev/license-verifier/apis/licenses

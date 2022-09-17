@@ -7,7 +7,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/license-verifier v0.11.1-0.20220917043059-0ecd48a27d8c
+	go.bytebuilders.dev/license-verifier v0.12.0
 	gomodules.xyz/logs v0.0.6
 	gomodules.xyz/x v0.0.14
 	k8s.io/api v0.25.1
@@ -132,6 +132,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/imdario/mergo => github.com/imdario/mergo v0.3.6
-
-replace k8s.io/apiserver => github.com/kmodules/apiserver v0.25.2-0.20220917044909-4ac5fceca518
+replace (
+	github.com/imdario/mergo => github.com/imdario/mergo v0.3.6
+	k8s.io/apiserver => github.com/kmodules/apiserver v0.25.2-0.20220917044909-4ac5fceca518
+)
