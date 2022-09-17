@@ -43,6 +43,7 @@ var (
 	_ rest.Scoper                   = &Storage{}
 	_ rest.Getter                   = &Storage{}
 	_ rest.Lister                   = &Storage{}
+	_ rest.Storage                  = &Storage{}
 )
 
 func NewStorage(reg *storage.LicenseRegistry, rb *storage.RecordBook) *Storage {
@@ -125,3 +126,5 @@ func (r *Storage) toLicenseStatus(rec *storage.Record) proxyv1alpha1.LicenseStat
 func (r *Storage) ConvertToTable(ctx context.Context, object runtime.Object, tableOptions runtime.Object) (*metav1.Table, error) {
 	return r.convertor.ConvertToTable(ctx, object, tableOptions)
 }
+
+func (r *Storage) Destroy() {}

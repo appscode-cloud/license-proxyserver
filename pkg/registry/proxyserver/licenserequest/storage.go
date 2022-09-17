@@ -46,6 +46,7 @@ var (
 	_ rest.GroupVersionKindProvider = &Storage{}
 	_ rest.Scoper                   = &Storage{}
 	_ rest.Creater                  = &Storage{}
+	_ rest.Storage                  = &Storage{}
 )
 
 func NewStorage(cid string, caCert *x509.Certificate, lc *client.Client, reg *storage.LicenseRegistry, rb *storage.RecordBook) *Storage {
@@ -113,3 +114,5 @@ func (r *Storage) getLicense(features []string) (*v1alpha1.License, error) {
 	r.reg.Add(&l, c)
 	return &l, nil
 }
+
+func (r *Storage) Destroy() {}
