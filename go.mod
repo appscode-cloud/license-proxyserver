@@ -7,7 +7,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/license-verifier v0.12.0
+	go.bytebuilders.dev/license-verifier v0.12.1-0.20221113063237-6eb88040dd50
 	gomodules.xyz/logs v0.0.6
 	gomodules.xyz/x v0.0.14
 	k8s.io/api v0.25.1
@@ -16,8 +16,8 @@ require (
 	k8s.io/client-go v0.25.1
 	k8s.io/klog/v2 v2.80.1
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1
-	kmodules.xyz/client-go v0.25.0
-	sigs.k8s.io/controller-runtime v0.13.0
+	kmodules.xyz/client-go v0.25.10
+	sigs.k8s.io/controller-runtime v0.13.1
 )
 
 require (
