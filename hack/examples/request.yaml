@@ -1,0 +1,5 @@
+apiVersion: proxyserver.licenses.appscode.com/v1alpha1
+kind: LicenseRequest
+request:
+  features:
+  - kubedb-enterprise
