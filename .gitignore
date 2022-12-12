@@ -35,6 +35,7 @@ testbin/*
 **/.env
 /.vscode
 /coverage.txt
+/.config
 
 /bin
 /.go
