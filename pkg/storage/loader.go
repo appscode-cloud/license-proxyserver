@@ -46,6 +46,14 @@ func LoadDir(cid, dir string, reg *LicenseRegistry) error {
 			continue
 		}
 
+		dirLink, err := isSymlinkToDir(dir, entry)
+		if err != nil {
+			return err
+		}
+		if dirLink {
+			continue
+		}
+
 		filename := filepath.Join(dir, entry.Name())
 		data, err := os.ReadFile(filename)
 		if err != nil {
@@ -65,4 +73,19 @@ func LoadDir(cid, dir string, reg *LicenseRegistry) error {
 		}
 	}
 	return nil
+}
+
+func isSymlinkToDir(dir string, entry os.DirEntry) (bool, error) {
+	if entry.Type() != os.ModeSymlink {
+		return false, nil
+	}
+	path, err := filepath.EvalSymlinks(filepath.Join(dir, entry.Name()))
+	if err != nil {
+		return false, err
+	}
+	stats, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+	return stats.IsDir(), nil
 }
