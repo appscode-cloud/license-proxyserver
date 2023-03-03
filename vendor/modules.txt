@@ -48,6 +48,8 @@ github.com/coreos/go-systemd/v22/journal
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
+# github.com/dustin/go-humanize v1.0.1-0.20220316001817-d5090ed65664
+## explicit; go 1.16
 # github.com/emicklei/go-restful/v3 v3.8.0
 ## explicit; go 1.13
 github.com/emicklei/go-restful/v3
@@ -122,6 +124,9 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
+# github.com/google/go-containerregistry v0.12.1
+## explicit; go 1.17
+github.com/google/go-containerregistry/pkg/name
 # github.com/google/gofuzz v1.2.0
 ## explicit; go 1.12
 github.com/google/gofuzz
@@ -146,8 +151,8 @@ github.com/grpc-ecosystem/grpc-gateway/utilities
 # github.com/imdario/mergo v0.3.13 => github.com/imdario/mergo v0.3.6
 ## explicit
 github.com/imdario/mergo
-# github.com/inconshreveable/mousetrap v1.0.0
-## explicit
+# github.com/inconshreveable/mousetrap v1.0.1
+## explicit; go 1.18
 github.com/inconshreveable/mousetrap
 # github.com/josharian/intern v1.0.0
 ## explicit; go 1.5
@@ -181,6 +186,9 @@ github.com/monochromegane/go-gitignore
 # github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
 ## explicit
 github.com/munnerz/goautoneg
+# github.com/opencontainers/go-digest v1.0.0
+## explicit; go 1.13
+github.com/opencontainers/go-digest
 # github.com/peterbourgon/diskv v2.0.1+incompatible
 ## explicit
 github.com/peterbourgon/diskv
@@ -207,10 +215,10 @@ github.com/prometheus/common/model
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
-# github.com/sergi/go-diff v1.1.0
+# github.com/sergi/go-diff v1.2.0
 ## explicit; go 1.12
 github.com/sergi/go-diff/diffmatchpatch
-# github.com/spf13/cobra v1.5.0
+# github.com/spf13/cobra v1.6.0
 ## explicit; go 1.15
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.5
@@ -347,12 +355,12 @@ go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
 go.uber.org/zap/zapgrpc
-# golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
+# golang.org/x/crypto v0.6.0
 ## explicit; go 1.17
 golang.org/x/crypto/cryptobyte
 golang.org/x/crypto/cryptobyte/asn1
+golang.org/x/crypto/internal/alias
 golang.org/x/crypto/internal/poly1305
-golang.org/x/crypto/internal/subtle
 golang.org/x/crypto/nacl/secretbox
 golang.org/x/crypto/pkcs12
 golang.org/x/crypto/pkcs12/internal/rc2
@@ -368,8 +376,8 @@ golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
 golang.org/x/net/websocket
-# golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
-## explicit; go 1.11
+# golang.org/x/oauth2 v0.1.0
+## explicit; go 1.17
 golang.org/x/oauth2
 golang.org/x/oauth2/authhandler
 golang.org/x/oauth2/google
@@ -377,7 +385,7 @@ golang.org/x/oauth2/google/internal/externalaccount
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
+# golang.org/x/sync v0.1.0
 ## explicit
 golang.org/x/sync/singleflight
 # golang.org/x/sys v0.5.0
@@ -497,7 +505,7 @@ google.golang.org/grpc/serviceconfig
 google.golang.org/grpc/stats
 google.golang.org/grpc/status
 google.golang.org/grpc/tap
-# google.golang.org/protobuf v1.28.0
+# google.golang.org/protobuf v1.28.1
 ## explicit; go 1.11
 google.golang.org/protobuf/encoding/protojson
 google.golang.org/protobuf/encoding/prototext
@@ -595,7 +603,7 @@ k8s.io/api/scheduling/v1beta1
 k8s.io/api/storage/v1
 k8s.io/api/storage/v1alpha1
 k8s.io/api/storage/v1beta1
-# k8s.io/apimachinery v0.25.1
+# k8s.io/apimachinery v0.25.3
 ## explicit; go 1.19
 k8s.io/apimachinery/pkg/api/apitesting
 k8s.io/apimachinery/pkg/api/apitesting/fuzzer
@@ -1124,7 +1132,7 @@ k8s.io/kube-openapi/pkg/spec3
 k8s.io/kube-openapi/pkg/util
 k8s.io/kube-openapi/pkg/util/proto
 k8s.io/kube-openapi/pkg/validation/spec
-# k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
+# k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73
 ## explicit; go 1.12
 k8s.io/utils/buffer
 k8s.io/utils/clock
@@ -1138,7 +1146,7 @@ k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/strings/slices
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.25.10
+# kmodules.xyz/client-go v0.25.14
 ## explicit; go 1.18
 kmodules.xyz/client-go
 kmodules.xyz/client-go/api/v1
