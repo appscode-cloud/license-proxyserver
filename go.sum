@@ -491,8 +491,8 @@ github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9de
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
-go.bytebuilders.dev/license-verifier v0.12.2 h1:S+4BMR1E7Ii6qDYKDYzt9+VgMRsOyQvdOiwHhLJ6wCc=
-go.bytebuilders.dev/license-verifier v0.12.2/go.mod h1:ahObOawJ+6AuFZUBZi6Dp3g4Q9AboqD97eH+bQPsLQw=
+go.bytebuilders.dev/license-verifier v0.13.0 h1:VyI8XydrZbzClSk45rPcjz9dVhyL0EfpWW4T08SXMGo=
+go.bytebuilders.dev/license-verifier v0.13.0/go.mod h1:PTTlWgokzoisBezn2zt+JeGkhTJZ0flvLzdhHVBy86M=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/bbolt v1.3.6 h1:/ecaJf0sk1l4l6V4awd65v2C3ILy7MSj+s/x1ADCIMU=
 go.etcd.io/etcd/api/v3 v3.5.4 h1:OHVyt3TopwtUQ2GKdd5wu3PmmipR4FTwCqoEjSyRdIc=
