@@ -29,7 +29,7 @@ CODE_GENERATOR_IMAGE ?= appscode/gengo:release-1.25
 API_GROUPS           ?= proxyserver:v1alpha1
 
 # Where to push the docker image.
-REGISTRY ?= appscode
+REGISTRY ?= ghcr.io/appscode
 SRC_REG  ?=
 
 # This version-strategy uses git tags to set the version string
@@ -440,7 +440,6 @@ install:
 	@cd ../installer; \
 	helm upgrade -i license-proxyserver charts/license-proxyserver --wait \
 		--namespace=$(KUBE_NAMESPACE) --create-namespace \
-		--set image.registry=$(REGISTRY) \
 		--set image.tag=$(TAG_PROD) \
 		--set imagePullPolicy=$(IMAGE_PULL_POLICY) \
 		--set platform.baseURL=$(PLATFORM_BASEURL) \
