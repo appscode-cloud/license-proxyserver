@@ -26,8 +26,8 @@ import (
 
 func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:               "ui-operator [command]",
-		Short:             `proxyserver by AppsCode`,
+		Use:               "license-proxyserver [command]",
+		Short:             `AppsCode License Proxy Server`,
 		DisableAutoGenTag: true,
 	}
 
