@@ -7,8 +7,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.6.0
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/license-verifier v0.13.0
-	gomodules.xyz/logs v0.0.6
+	go.bytebuilders.dev/license-verifier v0.13.2
+	gomodules.xyz/logs v0.0.7
 	gomodules.xyz/x v0.0.14
 	k8s.io/api v0.25.1
 	k8s.io/apimachinery v0.25.3
@@ -16,7 +16,7 @@ require (
 	k8s.io/client-go v0.25.1
 	k8s.io/klog/v2 v2.80.1
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1
-	kmodules.xyz/client-go v0.25.19
+	kmodules.xyz/client-go v0.25.30
 	sigs.k8s.io/controller-runtime v0.13.1
 )
 
@@ -112,7 +112,7 @@ require (
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
 	gomodules.xyz/clock v0.0.0-20200817085942-06523dba733f // indirect
 	gomodules.xyz/flags v0.1.3 // indirect
-	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
+	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	gomodules.xyz/sets v0.2.1 // indirect
 	gomodules.xyz/wait v0.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect

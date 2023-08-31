@@ -119,10 +119,10 @@ func (c defaultTableConvertor) ConvertToTable(ctx context.Context, object runtim
 		table.ColumnDefinitions = []metav1.TableColumnDefinition{
 			{Name: "Id", Type: "string", Format: "name", Description: swaggerMetadataDescriptions["name"]},
 			{Name: "Product", Type: "string", Description: ""},
-			{Name: "User", Type: "string", Description: ""},
+			{Name: "Requester", Type: "string", Description: ""},
 			{Name: "Contract", Type: "string", Description: ""},
-			{Name: "Contract Ends", Type: "string", Description: ""},
 			{Name: "Valid For", Type: "string", Description: ""},
+			{Name: "Refreshes In", Type: "string", Description: ""},
 		}
 	}
 	return &table, nil
