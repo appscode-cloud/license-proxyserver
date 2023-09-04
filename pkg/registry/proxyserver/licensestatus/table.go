@@ -121,8 +121,8 @@ func (c defaultTableConvertor) ConvertToTable(ctx context.Context, object runtim
 			{Name: "Product", Type: "string", Description: ""},
 			{Name: "Requester", Type: "string", Description: ""},
 			{Name: "Contract", Type: "string", Description: ""},
-			{Name: "Valid For", Type: "string", Description: ""},
-			{Name: "Refreshes In", Type: "string", Description: ""},
+			{Name: "Valid", Type: "string", Description: ""},
+			{Name: "Rotates", Type: "string", Description: ""},
 		}
 	}
 	return &table, nil
