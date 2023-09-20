@@ -42,6 +42,7 @@ import (
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/klog/v2/klogr"
 	cu "kmodules.xyz/client-go/client"
+	clustermeta "kmodules.xyz/client-go/cluster/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -148,7 +149,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		return nil, fmt.Errorf("unable to start manager, reason: %v", err)
 	}
 
-	cid, err := cu.ClusterUID(mgr.GetAPIReader())
+	cid, err := clustermeta.ClusterUID(mgr.GetAPIReader())
 	if err != nil {
 		return nil, err
 	}
