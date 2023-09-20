@@ -490,8 +490,8 @@ github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9de
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
-go.bytebuilders.dev/license-verifier v0.13.2 h1:wV1ynl+GR+zKb3dh19WEzuC0uzTdiSGgVg9G78Nh4XU=
-go.bytebuilders.dev/license-verifier v0.13.2/go.mod h1:PTTlWgokzoisBezn2zt+JeGkhTJZ0flvLzdhHVBy86M=
+go.bytebuilders.dev/license-verifier v0.13.3 h1:/CnRn1N6qiFjdirydHVBDtOtSlCwOm8cgUi0plZNgjU=
+go.bytebuilders.dev/license-verifier v0.13.3/go.mod h1:PTTlWgokzoisBezn2zt+JeGkhTJZ0flvLzdhHVBy86M=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/bbolt v1.3.6 h1:/ecaJf0sk1l4l6V4awd65v2C3ILy7MSj+s/x1ADCIMU=
 go.etcd.io/etcd/api/v3 v3.5.4 h1:OHVyt3TopwtUQ2GKdd5wu3PmmipR4FTwCqoEjSyRdIc=
@@ -1022,8 +1022,8 @@ k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 h1:MQ8BAZPZlWk3S9K4a9NCkI
 k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1/go.mod h1:C/N6wCaBHeBHkHUesQOQy2/MZqGgMAFPqGsGQLdbZBU=
 k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73 h1:H9TCJUUx+2VA0ZiD9lvtaX8fthFsMoD+Izn93E/hm8U=
 k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
-kmodules.xyz/client-go v0.25.30 h1:4qOhs1kX0oNl9tcY98PEtiUlD6TZqK9CRfqzfhZApsk=
-kmodules.xyz/client-go v0.25.30/go.mod h1:r/Va2Y6t1G8X1sPRjrQC6FWB3oh/i6rjssmlfJnbCmg=
+kmodules.xyz/client-go v0.25.34-0.20230920032936-80fc0fadf9ef h1:lm8ijwtpqYZdFmd+564P5yZ6IyiDTATWm3mejQrm0L4=
+kmodules.xyz/client-go v0.25.34-0.20230920032936-80fc0fadf9ef/go.mod h1:r/Va2Y6t1G8X1sPRjrQC6FWB3oh/i6rjssmlfJnbCmg=
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
 rsc.io/quote/v3 v3.1.0/go.mod h1:yEA65RcK8LyAZtP9Kv3t0HmxON59tX3rD+tICJqUlj0=
 rsc.io/sampler v1.3.0/go.mod h1:T1hPZKmBbMNahiBKFy5HrXp6adAjACjK9JXDnKaTXpA=
