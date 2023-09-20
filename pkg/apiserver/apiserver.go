@@ -42,7 +42,7 @@ import (
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/klog/v2/klogr"
 	cu "kmodules.xyz/client-go/client"
-	clustermeta "kmodules.xyz/client-go/cluster/meta"
+	clustermeta "kmodules.xyz/client-go/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
