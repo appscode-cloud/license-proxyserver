@@ -21,20 +21,34 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 
 	proxyv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
 	"go.bytebuilders.dev/license-proxyserver/pkg/apiserver"
+	"go.bytebuilders.dev/license-proxyserver/pkg/registry/ocm"
 
 	"github.com/spf13/pflag"
 	v "gomodules.xyz/x/version"
+	v1 "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apiserver/pkg/endpoints/openapi"
 	"k8s.io/apiserver/pkg/features"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 	"k8s.io/apiserver/pkg/util/feature"
+	"k8s.io/client-go/rest"
+	clientcmd2 "k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
+	"kmodules.xyz/client-go/cluster"
+	clustermeta "kmodules.xyz/client-go/cluster"
 	ou "kmodules.xyz/client-go/openapi"
 	"kmodules.xyz/client-go/tools/clientcmd"
+	ocmv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
+	ocmkl "open-cluster-management.io/api/operator/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -161,6 +175,114 @@ func (o LicenseProxyServerOptions) RunProxyServer(ctx context.Context) error {
 	}))
 	if err != nil {
 		return err
+	}
+
+	restConfig, err := rest.InClusterConfig()
+	if err != nil {
+		return err
+	}
+
+	mapper, err := apiutil.NewDynamicRESTMapper(restConfig)
+	if err != nil {
+		return err
+	}
+	cl, err := client.New(restConfig, client.Options{
+		Scheme: apiserver.Scheme,
+		Mapper: mapper,
+		Opts: client.WarningHandlerOptions{
+			SuppressWarnings:   true,
+			AllowDuplicateLogs: false,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	cid, err := clustermeta.ClusterUID(server.Manager.GetAPIReader())
+	if err != nil {
+		return err
+	}
+
+	cm := cluster.DetectClusterManager(cl).String()
+	if strings.Contains(cm, "OCMSpoke") {
+		// create clusterClaim ID
+		claim := ocmv1alpha1.ClusterClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "id.k8s.io",
+			},
+			Spec: ocmv1alpha1.ClusterClaimSpec{
+				Value: cid,
+			},
+		}
+
+		err := cl.Get(context.TODO(), client.ObjectKey{Name: claim.Name}, &claim)
+		if err != nil && kerr.IsNotFound(err) {
+			err = cl.Create(context.TODO(), &claim)
+			if err != nil {
+				return err
+			}
+		} else if err != nil {
+			return nil
+		}
+
+		// get klusterlet
+		kl := ocmkl.Klusterlet{}
+		err = cl.Get(context.Background(), client.ObjectKey{Name: "klusterlet"}, &kl)
+		if err != nil {
+			return err
+		}
+
+		// get hub kubeconfig from secret
+		s := v1.Secret{}
+		err = cl.Get(context.Background(), client.ObjectKey{Name: "license-proxyserver-addon-manager-hub-kubeconfig", Namespace: "kubeops"}, &s)
+		if err != nil {
+			return err
+		}
+
+		konfig, err := clientcmd2.NewClientConfigFromBytes(s.Data["kubeconfig"])
+		if err != nil {
+			return err
+		}
+
+		apiConfig, err := konfig.RawConfig()
+		if err != nil {
+			return err
+		}
+
+		authInfo := apiConfig.Contexts[apiConfig.CurrentContext].AuthInfo
+		apiConfig.AuthInfos[authInfo] = &api.AuthInfo{
+			ClientCertificateData: s.Data["tls.crt"],
+			ClientKeyData:         s.Data["tls.key"],
+		}
+
+		konfig = clientcmd2.NewNonInteractiveClientConfig(apiConfig, apiConfig.CurrentContext, &clientcmd2.ConfigOverrides{}, nil)
+		// hub restConfig
+		restConfig, err = konfig.ClientConfig()
+		if err != nil {
+			return err
+		}
+
+		hubClient, err := client.New(restConfig, client.Options{
+			Scheme: apiserver.Scheme,
+			Mapper: mapper,
+			Opts: client.WarningHandlerOptions{
+				SuppressWarnings:   true,
+				AllowDuplicateLogs: false,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		fr := &ocm.SecretReconciler{
+			Client:          hubClient, // hub cluster client
+			InClusterClient: server.Manager.GetClient(),
+			RestConfig:      restConfig, // hub restConfig
+			ClusterName:     kl.Spec.ClusterName,
+		}
+		if err := fr.SetupWithManager(server.Manager); err != nil {
+			return err
+		}
 	}
 
 	setupLog := log.Log.WithName("setup")

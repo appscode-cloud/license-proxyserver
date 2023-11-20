@@ -19,7 +19,6 @@ package apiserver
 import (
 	"context"
 	"fmt"
-
 	"go.bytebuilders.dev/license-proxyserver/apis/proxyserver"
 	proxyserverinstall "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/install"
 	proxyserverv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
@@ -43,7 +42,10 @@ import (
 	"k8s.io/klog/v2/klogr"
 	cu "kmodules.xyz/client-go/client"
 	clustermeta "kmodules.xyz/client-go/cluster"
+	ocm "open-cluster-management.io/api/cluster/v1alpha1"
+	ocmkl "open-cluster-management.io/api/operator/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -60,6 +62,9 @@ var (
 func init() {
 	proxyserverinstall.Install(Scheme)
 	utilruntime.Must(clientgoscheme.AddToScheme(Scheme))
+	utilruntime.Must(ocm.Install(Scheme))
+	utilruntime.Must(ocmkl.Install(Scheme))
+	utilruntime.Must(core.AddToScheme(Scheme))
 
 	// we need to add the options to empty v1
 	// TODO fix the server code to avoid this
@@ -185,6 +190,23 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		}
 	}
 
+	// create client
+	mapper, err := apiutil.NewDynamicRESTMapper(cfg)
+	if err != nil {
+		return nil, err
+	}
+	cl, err := client.New(cfg, client.Options{
+		Scheme: Scheme,
+		Mapper: mapper,
+		Opts: client.WarningHandlerOptions{
+			SuppressWarnings:   true,
+			AllowDuplicateLogs: false,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	setupLog.Info("setup done!")
 
 	s := &LicenseProxyServer{
@@ -195,7 +217,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(proxyserver.GroupName, Scheme, metav1.ParameterCodec, Codecs)
 
 		v1alpha1storage := map[string]rest.Storage{}
-		v1alpha1storage[proxyserverv1alpha1.ResourceLicenseRequests] = licenserequest.NewStorage(cid, caCert, lc, reg, rb)
+		v1alpha1storage[proxyserverv1alpha1.ResourceLicenseRequests] = licenserequest.NewStorage(cid, caCert, lc, reg, rb, &cl)
 		v1alpha1storage[proxyserverv1alpha1.ResourceLicenseStatuses] = licensestatus.NewStorage(reg, rb)
 		apiGroupInfo.VersionedResourcesStorageMap["v1alpha1"] = v1alpha1storage
 

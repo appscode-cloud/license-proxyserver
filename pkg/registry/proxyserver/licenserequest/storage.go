@@ -19,13 +19,20 @@ package licenserequest
 import (
 	"context"
 	"crypto/x509"
+<<<<<<< HEAD
 	"strings"
 
+=======
+>>>>>>> b8dd782 (Add spoke-cluster support)
 	proxyv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
 	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
 	verifier "go.bytebuilders.dev/license-verifier"
 	"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
 	"go.bytebuilders.dev/license-verifier/client"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
+	"kmodules.xyz/client-go/cluster"
+	ocm "open-cluster-management.io/api/cluster/v1alpha1"
+	"strings"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,6 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Storage struct {
@@ -41,6 +49,7 @@ type Storage struct {
 	lc     *client.Client
 	reg    *storage.LicenseRegistry
 	rb     *storage.RecordBook
+	cc     *runtimeclient.Client
 }
 
 var (
@@ -51,13 +60,14 @@ var (
 	_ rest.SingularNameProvider     = &Storage{}
 )
 
-func NewStorage(cid string, caCert *x509.Certificate, lc *client.Client, reg *storage.LicenseRegistry, rb *storage.RecordBook) *Storage {
+func NewStorage(cid string, caCert *x509.Certificate, lc *client.Client, reg *storage.LicenseRegistry, rb *storage.RecordBook, cc *runtimeclient.Client) *Storage {
 	s := &Storage{
 		cid:    cid,
 		caCert: caCert,
 		lc:     lc,
 		reg:    reg,
 		rb:     rb,
+		cc:     cc,
 	}
 	return s
 }
@@ -90,11 +100,46 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 		return nil, err
 	}
 
+	// create licenses.appscode.com clusterClaim
+	c := *r.cc
+	clusterManagers := cluster.DetectClusterManager(c).String()
+	if l.Data == nil && strings.Contains(clusterManagers, "OCMSpoke") {
+		ca := ocm.ClusterClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "licenses.appscode.com",
+			},
+		}
+		err = c.Get(context.TODO(), runtimeclient.ObjectKey{Name: ca.Name}, &ca)
+		if err != nil && kerr.IsNotFound(err) {
+			ca.Spec.Value = strings.Join(req.Request.Features, ",")
+			err = c.Create(context.TODO(), &ca)
+			if err != nil {
+				return req, err
+			}
+		} else if err != nil {
+			return req, nil
+		}
+
+		allFeatures := ca.Spec.Value
+		for _, f := range req.Request.Features {
+			if !strings.Contains(ca.Spec.Value, f) {
+				allFeatures += "," + f
+			}
+		}
+		strings.Trim(allFeatures, ",")
+
+		ca.Spec.Value = allFeatures
+		if err = c.Update(context.TODO(), &ca); err != nil {
+			return req, err
+		}
+	}
+
 	r.rb.Record(l.ID, req.Request.Features, user)
 
 	req.Response = &proxyv1alpha1.LicenseRequestResponse{
 		License: string(l.Data),
 	}
+
 	return req, nil
 }
 

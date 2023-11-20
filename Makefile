@@ -77,7 +77,7 @@ TAG              := $(VERSION)_$(OS)_$(ARCH)
 TAG_PROD         := $(TAG)
 TAG_DBG          := $(VERSION)-dbg_$(OS)_$(ARCH)
 
-GO_VERSION       ?= 1.21
+GO_VERSION       ?= 1.20
 BUILD_IMAGE      ?= ghcr.io/appscode/golang-dev:$(GO_VERSION)
 CHART_TEST_IMAGE ?= quay.io/helmpack/chart-testing:v3.5.1
 
@@ -441,8 +441,8 @@ install:
 		--namespace=$(KUBE_NAMESPACE) --create-namespace \
 		--set image.tag=$(TAG_PROD) \
 		--set imagePullPolicy=$(IMAGE_PULL_POLICY) \
-		--set platform.baseURL=$(PLATFORM_BASEURL) \
-		--set platform.token=$(PLATFORM_TOKEN) \
+		--set platform.baseURL="http://api.appscode.com" \
+		--set platform.token="" \
 		$(IMAGE_PULL_SECRETS); \
 
 .PHONY: uninstall
