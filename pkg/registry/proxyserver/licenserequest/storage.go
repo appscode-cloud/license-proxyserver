@@ -19,27 +19,23 @@ package licenserequest
 import (
 	"context"
 	"crypto/x509"
-<<<<<<< HEAD
 	"strings"
 
-=======
->>>>>>> b8dd782 (Add spoke-cluster support)
 	proxyv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
 	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
 	verifier "go.bytebuilders.dev/license-verifier"
 	"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
 	"go.bytebuilders.dev/license-verifier/client"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
-	"kmodules.xyz/client-go/cluster"
-	ocm "open-cluster-management.io/api/cluster/v1alpha1"
-	"strings"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
+	"kmodules.xyz/client-go/cluster"
+	ocm "open-cluster-management.io/api/cluster/v1alpha1"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
