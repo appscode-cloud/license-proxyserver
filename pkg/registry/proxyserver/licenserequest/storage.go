@@ -45,7 +45,7 @@ type Storage struct {
 	lc     *client.Client
 	reg    *storage.LicenseRegistry
 	rb     *storage.RecordBook
-	cc     *runtimeclient.Client
+	cc     runtimeclient.Client
 }
 
 var (
@@ -56,7 +56,7 @@ var (
 	_ rest.SingularNameProvider     = &Storage{}
 )
 
-func NewStorage(cid string, caCert *x509.Certificate, lc *client.Client, reg *storage.LicenseRegistry, rb *storage.RecordBook, cc *runtimeclient.Client) *Storage {
+func NewStorage(cid string, caCert *x509.Certificate, lc *client.Client, reg *storage.LicenseRegistry, rb *storage.RecordBook, cc runtimeclient.Client) *Storage {
 	s := &Storage{
 		cid:    cid,
 		caCert: caCert,
@@ -97,18 +97,17 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 	}
 
 	// create licenses.appscode.com clusterClaim
-	c := *r.cc
-	clusterManagers := cluster.DetectClusterManager(c).String()
+	clusterManagers := cluster.DetectClusterManager(r.cc).String()
 	if l.Data == nil && strings.Contains(clusterManagers, "OCMSpoke") {
 		ca := ocm.ClusterClaim{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "licenses.appscode.com",
 			},
 		}
-		err = c.Get(context.TODO(), runtimeclient.ObjectKey{Name: ca.Name}, &ca)
+		err = r.cc.Get(context.TODO(), runtimeclient.ObjectKey{Name: ca.Name}, &ca)
 		if err != nil && kerr.IsNotFound(err) {
 			ca.Spec.Value = strings.Join(req.Request.Features, ",")
-			err = c.Create(context.TODO(), &ca)
+			err = r.cc.Create(context.TODO(), &ca)
 			if err != nil {
 				return req, err
 			}
@@ -122,10 +121,8 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 				allFeatures += "," + f
 			}
 		}
-		strings.Trim(allFeatures, ",")
-
-		ca.Spec.Value = allFeatures
-		if err = c.Update(context.TODO(), &ca); err != nil {
+		ca.Spec.Value = strings.Trim(allFeatures, ",")
+		if err = r.cc.Update(context.TODO(), &ca); err != nil {
 			return req, err
 		}
 	}

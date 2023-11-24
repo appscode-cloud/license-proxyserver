@@ -196,7 +196,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 	if err != nil {
 		return nil, err
 	}
-	cl, err := client.New(cfg, client.Options{
+	cc, err := client.New(cfg, client.Options{
 		Scheme: Scheme,
 		Mapper: mapper,
 		Opts: client.WarningHandlerOptions{
@@ -218,7 +218,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(proxyserver.GroupName, Scheme, metav1.ParameterCodec, Codecs)
 
 		v1alpha1storage := map[string]rest.Storage{}
-		v1alpha1storage[proxyserverv1alpha1.ResourceLicenseRequests] = licenserequest.NewStorage(cid, caCert, lc, reg, rb, &cl)
+		v1alpha1storage[proxyserverv1alpha1.ResourceLicenseRequests] = licenserequest.NewStorage(cid, caCert, lc, reg, rb, cc)
 		v1alpha1storage[proxyserverv1alpha1.ResourceLicenseStatuses] = licensestatus.NewStorage(reg, rb)
 		apiGroupInfo.VersionedResourcesStorageMap["v1alpha1"] = v1alpha1storage
 
