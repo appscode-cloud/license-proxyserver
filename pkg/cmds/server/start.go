@@ -234,7 +234,7 @@ func (o LicenseProxyServerOptions) RunProxyServer(ctx context.Context) error {
 
 		// get hub kubeconfig from secret
 		s := v1.Secret{}
-		err = cl.Get(context.Background(), client.ObjectKey{Name: "license-proxyserver-addon-manager-hub-kubeconfig", Namespace: "kubeops"}, &s)
+		err = cl.Get(context.Background(), client.ObjectKey{Name: "license-proxyserver-hub-kubeconfig", Namespace: "kubeops"}, &s)
 		if err != nil {
 			return err
 		}
