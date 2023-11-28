@@ -26,15 +26,17 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
-	LicenseSecret = "license-proxyserver-addon-manager-licenses"
+	LicenseSecret = "license-proxyserver-licenses"
 )
 
 type SecretReconciler struct {
@@ -88,7 +90,9 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 // SetupWithManager sets up the controller with the Manager.
 func (r *SecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1.Secret{}).
+		For(&v1.Secret{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
+			return obj.GetName() == LicenseSecret
+		}))).
 		Watches(
 			&source.Kind{Type: &v1.Secret{}},
 			handler.EnqueueRequestsFromMapFunc(r.findSecrets()),
