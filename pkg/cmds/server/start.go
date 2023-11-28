@@ -53,7 +53,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-const defaultEtcdPathPrefix = "/registry/k8s.appscode.com"
+const (
+	defaultEtcdPathPrefix        = "/registry/k8s.appscode.com"
+	HubKubeConfigSecretName      = "license-proxyserver-hub-kubeconfig"
+	HubKubeConfigSecretNamespace = "kubeops"
+)
 
 // LicenseProxyServerOptions contains state for master/api server
 type LicenseProxyServerOptions struct {
@@ -234,7 +238,7 @@ func (o LicenseProxyServerOptions) RunProxyServer(ctx context.Context) error {
 
 		// get hub kubeconfig from secret
 		s := v1.Secret{}
-		err = cl.Get(context.Background(), client.ObjectKey{Name: "license-proxyserver-hub-kubeconfig", Namespace: "kubeops"}, &s)
+		err = cl.Get(context.Background(), client.ObjectKey{Name: HubKubeConfigSecretName, Namespace: HubKubeConfigSecretNamespace}, &s)
 		if err != nil {
 			return err
 		}

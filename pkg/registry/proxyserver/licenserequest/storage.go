@@ -39,6 +39,8 @@ import (
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const LicenseClusterClaim = "licenses.appscode.com"
+
 type Storage struct {
 	cid    string
 	caCert *x509.Certificate
@@ -101,7 +103,7 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 	if l.Data == nil && strings.Contains(clusterManagers, "OCMSpoke") {
 		ca := ocm.ClusterClaim{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "licenses.appscode.com",
+				Name: LicenseClusterClaim,
 			},
 		}
 		err = r.cc.Get(context.TODO(), runtimeclient.ObjectKey{Name: ca.Name}, &ca)

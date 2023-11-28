@@ -36,7 +36,8 @@ import (
 )
 
 const (
-	LicenseSecret = "license-proxyserver-licenses"
+	LicenseSecret          = "license-proxyserver-licenses"
+	LicenseSecretNamespace = "kubeops"
 )
 
 type SecretReconciler struct {
@@ -61,7 +62,7 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 	spokeSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      LicenseSecret,
-			Namespace: "kubeops",
+			Namespace: LicenseSecretNamespace,
 		},
 	}
 	err = r.InClusterClient.Get(context.Background(), client.ObjectKey{Name: spokeSecret.Name, Namespace: spokeSecret.Namespace}, spokeSecret)
