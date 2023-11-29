@@ -18,7 +18,6 @@ package ocm
 
 import (
 	"context"
-	"reflect"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -74,25 +73,20 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 		return reconcile.Result{}, err
 	}
 
-	// check hubSecret and spokeSecret
-	if reflect.DeepEqual(sec.Data, spokeSecret.Data) {
-		return reconcile.Result{}, err
-	}
-
 	spokeSecret.Data = sec.Data
 	err = r.InClusterClient.Update(context.Background(), spokeSecret)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	return ctrl.Result{}, nil
+	return reconcile.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.Secret{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
-			return obj.GetName() == LicenseSecret
+			return obj.GetName() == LicenseSecret && obj.GetNamespace() == r.ClusterName
 		}))).
 		Watches(
 			&source.Kind{Type: &v1.Secret{}},

@@ -94,39 +94,41 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 	req := obj.(*proxyv1alpha1.LicenseRequest)
 
 	l, err := r.getLicense(req.Request.Features)
-	if err != nil {
-		return nil, err
-	}
 
 	// create licenses.appscode.com clusterClaim
 	clusterManagers := cluster.DetectClusterManager(r.cc).String()
-	if l.Data == nil && strings.Contains(clusterManagers, "OCMSpoke") {
+	if l == nil && strings.Contains(clusterManagers, "OCMSpoke") {
+		mainErr := err
 		ca := ocm.ClusterClaim{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: LicenseClusterClaim,
 			},
 		}
 		err = r.cc.Get(context.TODO(), runtimeclient.ObjectKey{Name: ca.Name}, &ca)
-		if err != nil && kerr.IsNotFound(err) {
+		if err == nil {
+			allFeatures := ca.Spec.Value
+			for _, f := range req.Request.Features {
+				if !strings.Contains(allFeatures, f) {
+					allFeatures += "," + f
+				}
+			}
+			ca.Spec.Value = strings.Trim(allFeatures, ",")
+			if err = r.cc.Update(context.TODO(), &ca); err != nil {
+				return nil, err
+			}
+		} else if err != nil && kerr.IsNotFound(err) {
 			ca.Spec.Value = strings.Join(req.Request.Features, ",")
 			err = r.cc.Create(context.TODO(), &ca)
 			if err != nil {
-				return req, err
+				return nil, err
 			}
 		} else if err != nil {
-			return req, nil
+			return nil, err
 		}
 
-		allFeatures := ca.Spec.Value
-		for _, f := range req.Request.Features {
-			if !strings.Contains(ca.Spec.Value, f) {
-				allFeatures += "," + f
-			}
-		}
-		ca.Spec.Value = strings.Trim(allFeatures, ",")
-		if err = r.cc.Update(context.TODO(), &ca); err != nil {
-			return req, err
-		}
+		return nil, mainErr
+	} else if !strings.Contains(clusterManagers, "OCMSpoke") && err != nil {
+		return nil, err
 	}
 
 	r.rb.Record(l.ID, req.Request.Features, user)
