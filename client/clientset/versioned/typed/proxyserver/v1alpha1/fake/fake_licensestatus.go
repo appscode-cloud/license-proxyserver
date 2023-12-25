@@ -24,7 +24,6 @@ import (
 	v1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	testing "k8s.io/client-go/testing"
 )
 
@@ -33,9 +32,9 @@ type FakeLicenseStatuses struct {
 	Fake *FakeProxyserverV1alpha1
 }
 
-var licensestatusesResource = schema.GroupVersionResource{Group: "proxyserver.licenses.appscode.com", Version: "v1alpha1", Resource: "licensestatuses"}
+var licensestatusesResource = v1alpha1.SchemeGroupVersion.WithResource("licensestatuses")
 
-var licensestatusesKind = schema.GroupVersionKind{Group: "proxyserver.licenses.appscode.com", Version: "v1alpha1", Kind: "LicenseStatus"}
+var licensestatusesKind = v1alpha1.SchemeGroupVersion.WithKind("LicenseStatus")
 
 // Get takes name of the licenseStatus, and returns the corresponding licenseStatus object, and an error if there is any.
 func (c *FakeLicenseStatuses) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.LicenseStatus, err error) {
