@@ -23,7 +23,6 @@ import (
 
 	v1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	testing "k8s.io/client-go/testing"
 )
 
@@ -32,9 +31,9 @@ type FakeLicenseRequests struct {
 	Fake *FakeProxyserverV1alpha1
 }
 
-var licenserequestsResource = schema.GroupVersionResource{Group: "proxyserver.licenses.appscode.com", Version: "v1alpha1", Resource: "licenserequests"}
+var licenserequestsResource = v1alpha1.SchemeGroupVersion.WithResource("licenserequests")
 
-var licenserequestsKind = schema.GroupVersionKind{Group: "proxyserver.licenses.appscode.com", Version: "v1alpha1", Kind: "LicenseRequest"}
+var licenserequestsKind = v1alpha1.SchemeGroupVersion.WithKind("LicenseRequest")
 
 // Create takes the representation of a licenseRequest and creates it.  Returns the server's representation of the licenseRequest, and an error, if there is any.
 func (c *FakeLicenseRequests) Create(ctx context.Context, licenseRequest *v1alpha1.LicenseRequest, opts v1.CreateOptions) (result *v1alpha1.LicenseRequest, err error) {
