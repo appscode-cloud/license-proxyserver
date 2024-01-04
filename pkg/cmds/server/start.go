@@ -101,6 +101,13 @@ func (o *LicenseProxyServerOptions) Config() (*apiserver.Config, error) {
 	// Fixes https://github.com/Azure/AKS/issues/522
 	clientcmd.Fix(serverConfig.ClientConfig)
 
+
+	ignorePrefixes := []string{
+		"/swaggerapi",
+		fmt.Sprintf("/apis/%s/%s", proxyv1alpha1.SchemeGroupVersion, proxyv1alpha1.ResourceLicenseRequests),
+		fmt.Sprintf("/apis/%s/%s", proxyv1alpha1.SchemeGroupVersion, proxyv1alpha1.ResourceLicenseStatuses),
+	}
+
 	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(
 		ou.GetDefinitions(
 			proxyv1alpha1.GetOpenAPIDefinitions,
@@ -108,11 +115,16 @@ func (o *LicenseProxyServerOptions) Config() (*apiserver.Config, error) {
 		openapi.NewDefinitionNamer(apiserver.Scheme))
 	serverConfig.OpenAPIConfig.Info.Title = "proxyserver"
 	serverConfig.OpenAPIConfig.Info.Version = v.Version.Version
-	serverConfig.OpenAPIConfig.IgnorePrefixes = []string{
-		"/swaggerapi",
-		fmt.Sprintf("/apis/%s/%s", proxyv1alpha1.SchemeGroupVersion, proxyv1alpha1.ResourceLicenseRequests),
-		fmt.Sprintf("/apis/%s/%s", proxyv1alpha1.SchemeGroupVersion, proxyv1alpha1.ResourceLicenseStatuses),
-	}
+	serverConfig.OpenAPIConfig.IgnorePrefixes = ignorePrefixes
+
+	serverConfig.OpenAPIV3Config = genericapiserver.DefaultOpenAPIV3Config(
+		ou.GetDefinitions(
+			proxyv1alpha1.GetOpenAPIDefinitions,
+		),
+		openapi.NewDefinitionNamer(apiserver.Scheme))
+	serverConfig.OpenAPIV3Config.Info.Title = "proxyserver"
+	serverConfig.OpenAPIV3Config.Info.Version = v.Version.Version
+	serverConfig.OpenAPIV3Config.IgnorePrefixes = ignorePrefixes
 
 	extraConfig := apiserver.ExtraConfig{
 		ClientConfig: serverConfig.ClientConfig,
