@@ -19,6 +19,7 @@ package licenserequest
 import (
 	"context"
 	"crypto/x509"
+	"strings"
 
 	proxyv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
 	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
@@ -47,6 +48,7 @@ var (
 	_ rest.Scoper                   = &Storage{}
 	_ rest.Creater                  = &Storage{}
 	_ rest.Storage                  = &Storage{}
+	_ rest.SingularNameProvider     = &Storage{}
 )
 
 func NewStorage(cid string, caCert *x509.Certificate, lc *client.Client, reg *storage.LicenseRegistry, rb *storage.RecordBook) *Storage {
@@ -66,6 +68,10 @@ func (r *Storage) GroupVersionKind(_ schema.GroupVersion) schema.GroupVersionKin
 
 func (r *Storage) NamespaceScoped() bool {
 	return false
+}
+
+func (r *Storage) GetSingularName() string {
+	return strings.ToLower(proxyv1alpha1.ResourceKindLicenseRequest)
 }
 
 func (r *Storage) New() runtime.Object {

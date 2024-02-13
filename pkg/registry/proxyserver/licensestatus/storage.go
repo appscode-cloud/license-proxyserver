@@ -18,6 +18,7 @@ package licensestatus
 
 import (
 	"context"
+	"strings"
 
 	"go.bytebuilders.dev/license-proxyserver/apis/proxyserver"
 	proxyv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
@@ -44,6 +45,7 @@ var (
 	_ rest.Getter                   = &Storage{}
 	_ rest.Lister                   = &Storage{}
 	_ rest.Storage                  = &Storage{}
+	_ rest.SingularNameProvider     = &Storage{}
 )
 
 func NewStorage(reg *storage.LicenseRegistry, rb *storage.RecordBook) *Storage {
@@ -64,6 +66,10 @@ func (r *Storage) GroupVersionKind(_ schema.GroupVersion) schema.GroupVersionKin
 
 func (r *Storage) NamespaceScoped() bool {
 	return false
+}
+
+func (r *Storage) GetSingularName() string {
+	return strings.ToLower(proxyv1alpha1.ResourceKindLicenseStatus)
 }
 
 func (r *Storage) New() runtime.Object {
