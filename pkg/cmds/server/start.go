@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 
 	proxyv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
 	"go.bytebuilders.dev/license-proxyserver/pkg/apiserver"
@@ -39,7 +40,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-const defaultEtcdPathPrefix = "/registry/k8s.appscode.com"
+const (
+	defaultEtcdPathPrefix = "/registry/k8s.appscode.com"
+)
 
 // LicenseProxyServerOptions contains state for master/api server
 type LicenseProxyServerOptions struct {
@@ -139,8 +142,10 @@ func (o *LicenseProxyServerOptions) Config() (*apiserver.Config, error) {
 	return config, nil
 }
 
-// RunProxyServer starts a new LicenseProxyServer given LicenseProxyServerOptions
-func (o LicenseProxyServerOptions) RunProxyServer(ctx context.Context) error {
+// Run starts a new LicenseProxyServer given LicenseProxyServerOptions
+func (o LicenseProxyServerOptions) Run(ctx context.Context) error {
+	setupLog := log.Log.WithName("setup")
+
 	config, err := o.Config()
 	if err != nil {
 		return err
@@ -156,14 +161,24 @@ func (o LicenseProxyServerOptions) RunProxyServer(ctx context.Context) error {
 		return nil
 	})
 
-	err = server.Manager.Add(manager.RunnableFunc(func(ctx context.Context) error {
+	err = server.SpokeManager.Add(manager.RunnableFunc(func(ctx context.Context) error {
 		return server.GenericAPIServer.PrepareRun().Run(ctx.Done())
 	}))
 	if err != nil {
 		return err
 	}
 
-	setupLog := log.Log.WithName("setup")
+	if server.HubManager != nil {
+		err = server.SpokeManager.Add(manager.RunnableFunc(func(ctx context.Context) error {
+			setupLog.Info("starting hub manager")
+			return server.HubManager.Start(ctx)
+		}))
+		if err != nil {
+			setupLog.Error(err, "problem running hub manager")
+			os.Exit(1)
+		}
+	}
+
 	setupLog.Info("starting manager")
-	return server.Manager.Start(ctx)
+	return server.SpokeManager.Start(ctx)
 }

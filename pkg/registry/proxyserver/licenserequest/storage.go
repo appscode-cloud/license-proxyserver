@@ -19,28 +19,37 @@ package licenserequest
 import (
 	"context"
 	"crypto/x509"
+	"fmt"
+	"sort"
 	"strings"
 
 	proxyv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
 	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
 	verifier "go.bytebuilders.dev/license-verifier"
 	"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
-	"go.bytebuilders.dev/license-verifier/client"
+	pc "go.bytebuilders.dev/license-verifier/client"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
+	ocmcluster "open-cluster-management.io/api/cluster/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const LicenseClusterClaim = "licenses.appscode.com"
+
 type Storage struct {
-	cid    string
-	caCert *x509.Certificate
-	lc     *client.Client
-	reg    *storage.LicenseRegistry
-	rb     *storage.RecordBook
+	cid         string
+	caCert      *x509.Certificate
+	lc          *pc.Client
+	reg         *storage.LicenseRegistry
+	rb          *storage.RecordBook
+	spokeClient client.Client
 }
 
 var (
@@ -51,13 +60,14 @@ var (
 	_ rest.SingularNameProvider     = &Storage{}
 )
 
-func NewStorage(cid string, caCert *x509.Certificate, lc *client.Client, reg *storage.LicenseRegistry, rb *storage.RecordBook) *Storage {
+func NewStorage(cid string, caCert *x509.Certificate, lc *pc.Client, reg *storage.LicenseRegistry, rb *storage.RecordBook, spokeClient client.Client) *Storage {
 	s := &Storage{
-		cid:    cid,
-		caCert: caCert,
-		lc:     lc,
-		reg:    reg,
-		rb:     rb,
+		cid:         cid,
+		caCert:      caCert,
+		lc:          lc,
+		reg:         reg,
+		rb:          rb,
+		spokeClient: spokeClient,
 	}
 	return s
 }
@@ -88,13 +98,46 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 	l, err := r.getLicense(req.Request.Features)
 	if err != nil {
 		return nil, err
+	} else if l == nil {
+		ca := ocmcluster.ClusterClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: LicenseClusterClaim,
+			},
+		}
+		err = r.spokeClient.Get(context.TODO(), client.ObjectKey{Name: ca.Name}, &ca)
+		if err == nil {
+			curFeatures := sets.New[string](strings.Split(ca.Spec.Value, ",")...)
+			reqFeatures := sets.New[string](req.Request.Features...)
+
+			extraFeatures := reqFeatures.Difference(curFeatures)
+			if extraFeatures.Len() > 0 {
+				curFeatures.Insert(extraFeatures.UnsortedList()...)
+
+				ca.Spec.Value = strings.Join(sets.List[string](curFeatures), ",")
+				err = r.spokeClient.Update(context.TODO(), &ca)
+				if err != nil {
+					return nil, err
+				}
+			}
+		} else if kerr.IsNotFound(err) {
+			reqFeatures := req.Request.Features
+			sort.Strings(reqFeatures)
+			ca.Spec.Value = strings.Join(reqFeatures, ",")
+			err = r.spokeClient.Create(context.TODO(), &ca)
+			if err != nil {
+				return nil, err
+			}
+		} else if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("requested license to hub")
 	}
 
 	r.rb.Record(l.ID, req.Request.Features, user)
-
 	req.Response = &proxyv1alpha1.LicenseRequestResponse{
 		License: string(l.Data),
 	}
+
 	return req, nil
 }
 
@@ -105,14 +148,18 @@ func (r *Storage) getLicense(features []string) (*v1alpha1.License, error) {
 			return l, nil
 		}
 	}
-	nl, c, err := r.lc.AcquireLicense(features)
+	if r.lc == nil {
+		return nil, nil
+	}
+
+	lbytes, c, err := r.lc.AcquireLicense(features)
 	if err != nil {
 		return nil, err
 	}
 	l, err := verifier.ParseLicense(verifier.ParserOptions{
 		ClusterUID: r.cid,
 		CACert:     r.caCert,
-		License:    nl,
+		License:    lbytes,
 	})
 	if err != nil {
 		return nil, err
