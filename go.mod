@@ -1,8 +1,6 @@
 module go.bytebuilders.dev/license-proxyserver
 
-go 1.21.5
-
-toolchain go1.21.7
+go 1.22.0
 
 require (
 	github.com/google/gofuzz v1.2.0
@@ -11,7 +9,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	go.bytebuilders.dev/license-verifier v0.14.0
 	gomodules.xyz/logs v0.0.7
-	gomodules.xyz/x v0.0.15
+	gomodules.xyz/x v0.0.16
 	k8s.io/api v0.29.1
 	k8s.io/apimachinery v0.29.1
 	k8s.io/apiserver v0.29.0
@@ -58,7 +56,7 @@ require (
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/go-containerregistry v0.16.1 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
-	github.com/google/uuid v1.3.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.0 // indirect

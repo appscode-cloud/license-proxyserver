@@ -36,7 +36,6 @@ const (
 type LicenseSyncer struct {
 	HubClient   client.Client
 	SpokeClient client.Client
-	LoadLicense func() error
 }
 
 func (r *LicenseSyncer) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -68,11 +67,6 @@ func (r *LicenseSyncer) Reconcile(ctx context.Context, request reconcile.Request
 
 	licenseSecret.Data = sec.Data
 	err = r.SpokeClient.Update(context.Background(), licenseSecret)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	err = r.LoadLicense()
 	if err != nil {
 		return reconcile.Result{}, err
 	}

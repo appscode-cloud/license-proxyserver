@@ -32,6 +32,7 @@ import (
 	pc "go.bytebuilders.dev/license-verifier/client"
 	"go.bytebuilders.dev/license-verifier/info"
 
+	"gomodules.xyz/x/ioutil"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -287,11 +288,21 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		if err := (&secret.LicenseSyncer{
 			HubClient:   s.HubManager.GetClient(),
 			SpokeClient: spokeManager.GetClient(),
-			LoadLicense: func() error {
-				return storage.LoadDir(cid, c.ExtraConfig.LicenseDir, reg)
-			},
 		}).SetupWithManager(spokeManager); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "LicenseSyncer")
+			os.Exit(1)
+		}
+
+		err = spokeManager.Add(manager.RunnableFunc(func(ctx context.Context) error {
+			return (&ioutil.Watcher{
+				WatchDir: c.ExtraConfig.LicenseDir,
+				Reload: func() error {
+					return storage.LoadDir(cid, c.ExtraConfig.LicenseDir, reg)
+				},
+			}).Run(ctx.Done())
+		}))
+		if err != nil {
+			setupLog.Error(err, "failed to setup license file watcher")
 			os.Exit(1)
 		}
 	}
