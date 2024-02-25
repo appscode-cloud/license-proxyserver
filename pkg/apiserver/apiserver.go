@@ -19,18 +19,23 @@ package apiserver
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"go.bytebuilders.dev/license-proxyserver/apis/proxyserver"
 	proxyserverinstall "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/install"
 	proxyserverv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
+	"go.bytebuilders.dev/license-proxyserver/pkg/controllers/secret"
 	"go.bytebuilders.dev/license-proxyserver/pkg/registry/proxyserver/licenserequest"
 	"go.bytebuilders.dev/license-proxyserver/pkg/registry/proxyserver/licensestatus"
 	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
 	licenseclient "go.bytebuilders.dev/license-verifier/client"
+	pc "go.bytebuilders.dev/license-verifier/client"
 	"go.bytebuilders.dev/license-verifier/info"
 
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -40,13 +45,14 @@ import (
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2/klogr"
 	cu "kmodules.xyz/client-go/client"
 	clustermeta "kmodules.xyz/client-go/cluster"
-	ocm "open-cluster-management.io/api/cluster/v1alpha1"
-	ocmkl "open-cluster-management.io/api/operator/v1"
+	ocmcluster "open-cluster-management.io/api/cluster/v1alpha1"
+	ocmoperator "open-cluster-management.io/api/operator/v1"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -63,8 +69,8 @@ var (
 func init() {
 	proxyserverinstall.Install(Scheme)
 	utilruntime.Must(clientgoscheme.AddToScheme(Scheme))
-	utilruntime.Must(ocm.Install(Scheme))
-	utilruntime.Must(ocmkl.Install(Scheme))
+	utilruntime.Must(ocmcluster.Install(Scheme))
+	utilruntime.Must(ocmoperator.Install(Scheme))
 	utilruntime.Must(core.AddToScheme(Scheme))
 
 	// we need to add the options to empty v1
@@ -84,11 +90,12 @@ func init() {
 
 // ExtraConfig holds custom apiserver config
 type ExtraConfig struct {
-	ClientConfig *restclient.Config
-	BaseURL      string
-	Token        string
-	LicenseDir   string
-	CacheDir     string
+	ClientConfig  *restclient.Config
+	BaseURL       string
+	Token         string
+	LicenseDir    string
+	CacheDir      string
+	HubKubeconfig string
 }
 
 // Config defines the config for the apiserver
@@ -100,7 +107,8 @@ type Config struct {
 // LicenseProxyServer contains state for a Kubernetes cluster master/api server.
 type LicenseProxyServer struct {
 	GenericAPIServer *genericapiserver.GenericAPIServer
-	Manager          manager.Manager
+	HubManager       manager.Manager
+	SpokeManager     manager.Manager
 }
 
 type completedConfig struct {
@@ -139,7 +147,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 	setupLog := log.Log.WithName("setup")
 
 	cfg := c.ExtraConfig.ClientConfig
-	mgr, err := manager.New(cfg, manager.Options{
+	spokeManager, err := manager.New(cfg, manager.Options{
 		Scheme:                 Scheme,
 		Metrics:                metricsserver.Options{BindAddress: ""},
 		HealthProbeBindAddress: "",
@@ -155,10 +163,13 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		NewClient: cu.NewClient,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("unable to start manager, reason: %v", err)
+		setupLog.Error(err, "unable to start spoke manager")
+		os.Exit(1)
 	}
 
-	cid, err := clustermeta.ClusterUID(mgr.GetAPIReader())
+	isSpokeCluster := clustermeta.IsOpenClusterSpoke(spokeManager.GetRESTMapper())
+
+	cid, err := clustermeta.ClusterUID(spokeManager.GetAPIReader())
 	if err != nil {
 		return nil, err
 	}
@@ -171,9 +182,19 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 	if err != nil {
 		return nil, err
 	}
-	lc, err := licenseclient.NewClient(c.ExtraConfig.BaseURL, c.ExtraConfig.Token, cid)
-	if err != nil {
-		return nil, err
+
+	var lc *pc.Client
+	if !isSpokeCluster {
+		if c.ExtraConfig.BaseURL == "" {
+			return nil, fmt.Errorf("missing --baseURL")
+		}
+		if c.ExtraConfig.Token == "" {
+			return nil, fmt.Errorf("missing --token")
+		}
+		lc, err = licenseclient.NewClient(c.ExtraConfig.BaseURL, c.ExtraConfig.Token, cid)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	rb := storage.NewRecordBook()
@@ -191,38 +212,95 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		}
 	}
 
-	// create client
-	hc, err := restclient.HTTPClientFor(cfg)
-	if err != nil {
-		return nil, err
-	}
-	mapper, err := apiutil.NewDynamicRESTMapper(cfg, hc)
-	if err != nil {
-		return nil, err
-	}
-	cc, err := client.New(cfg, client.Options{
-		Scheme: Scheme,
-		Mapper: mapper,
-		WarningHandler: client.WarningHandlerOptions{
-			SuppressWarnings:   true,
-			AllowDuplicateLogs: false,
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	setupLog.Info("setup done!")
-
 	s := &LicenseProxyServer{
 		GenericAPIServer: genericServer,
-		Manager:          mgr,
+		SpokeManager:     spokeManager,
 	}
+
+	if isSpokeCluster {
+		if c.ExtraConfig.HubKubeconfig == "" {
+			return nil, fmt.Errorf("missing --hub-kubeconfig")
+		}
+		if c.ExtraConfig.LicenseDir == "" {
+			return nil, fmt.Errorf("missing --license-dir")
+		}
+
+		// create clusterClaim ID
+		err = spokeManager.Add(manager.RunnableFunc(func(ctx context.Context) error {
+			claim := ocmcluster.ClusterClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "id.k8s.io",
+				},
+				Spec: ocmcluster.ClusterClaimSpec{
+					Value: cid,
+				},
+			}
+			err := spokeManager.GetClient().Get(context.TODO(), client.ObjectKey{Name: claim.Name}, &claim)
+			if kerr.IsNotFound(err) {
+				return spokeManager.GetClient().Create(context.TODO(), &claim)
+			}
+			return err
+		}))
+		if err != nil {
+			setupLog.Error(err, "failed to setup id clusterclaim updater")
+			os.Exit(1)
+		}
+
+		// get klusterlet
+		kl := ocmoperator.Klusterlet{}
+		err = spokeManager.GetAPIReader().Get(context.Background(), client.ObjectKey{Name: "klusterlet"}, &kl)
+		if err != nil {
+			return nil, err
+		}
+
+		// get hub kubeconfig
+		hubConfig, err := clientcmd.BuildConfigFromFlags("", c.ExtraConfig.HubKubeconfig)
+		if err != nil {
+			setupLog.Error(err, "unable to build hub rest config")
+			os.Exit(1)
+		}
+
+		s.HubManager, err = manager.New(hubConfig, manager.Options{
+			Scheme:                 Scheme,
+			Metrics:                metricsserver.Options{BindAddress: ""},
+			HealthProbeBindAddress: "",
+			LeaderElection:         false,
+			LeaderElectionID:       "5b87adeb-hub.proxyserver.licenses.appscode.com",
+			NewClient:              cu.NewClient,
+			Cache: cache.Options{
+				ByObject: map[client.Object]cache.ByObject{
+					&core.Secret{}: {
+						Namespaces: map[string]cache.Config{
+							kl.Spec.ClusterName: {
+								FieldSelector: fields.OneTermEqualSelector("metadata.name", secret.LicenseSecret),
+							},
+						},
+					},
+				},
+			},
+		})
+		if err != nil {
+			setupLog.Error(err, "unable to start hub manager")
+			os.Exit(1)
+		}
+
+		if err := (&secret.LicenseSyncer{
+			HubClient:   s.HubManager.GetClient(),
+			SpokeClient: spokeManager.GetClient(),
+			LoadLicense: func() error {
+				return storage.LoadDir(cid, c.ExtraConfig.LicenseDir, reg)
+			},
+		}).SetupWithManager(spokeManager); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "LicenseSyncer")
+			os.Exit(1)
+		}
+	}
+
 	{
 		apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(proxyserver.GroupName, Scheme, metav1.ParameterCodec, Codecs)
 
 		v1alpha1storage := map[string]rest.Storage{}
-		v1alpha1storage[proxyserverv1alpha1.ResourceLicenseRequests] = licenserequest.NewStorage(cid, caCert, lc, reg, rb, cc)
+		v1alpha1storage[proxyserverv1alpha1.ResourceLicenseRequests] = licenserequest.NewStorage(cid, caCert, lc, reg, rb, spokeManager.GetClient())
 		v1alpha1storage[proxyserverv1alpha1.ResourceLicenseStatuses] = licensestatus.NewStorage(reg, rb)
 		apiGroupInfo.VersionedResourcesStorageMap["v1alpha1"] = v1alpha1storage
 

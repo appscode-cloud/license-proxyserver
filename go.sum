@@ -693,8 +693,8 @@ k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 h1:aVUu9fTY98ivBPKR9Y5w/A
 k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00/go.mod h1:AsvuZPBlUDVuCdzJ87iajxtXuR9oktsTctW/R9wwouA=
 k8s.io/utils v0.0.0-20230726121419-3b25d923346b h1:sgn3ZU783SCgtaSJjpcVVlRqd6GSnlTLKgpAAttJvpI=
 k8s.io/utils v0.0.0-20230726121419-3b25d923346b/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
-kmodules.xyz/client-go v0.29.9 h1:nZcKM4YzmHAAQ62EYLep1NQdhARA9uOnYOiHMRf2VVg=
-kmodules.xyz/client-go v0.29.9/go.mod h1:WYM/ZC3I5/AUGHYyYYEzYHFhnSwK+tEZyGld6KpLoxI=
+kmodules.xyz/client-go v0.29.10 h1:vmbKaQ0CEOls4Ta8VjUxlcnvBhTzuhc5QAfGb9pAECM=
+kmodules.xyz/client-go v0.29.10/go.mod h1:WYM/ZC3I5/AUGHYyYYEzYHFhnSwK+tEZyGld6KpLoxI=
 open-cluster-management.io/api v0.13.0 h1:dlcJEZlNlE0DmSDctK2s7iWKg9l+Tgb0V78Z040nMuk=
 open-cluster-management.io/api v0.13.0/go.mod h1:CuCPEzXDvOyxBB0H1d1eSeajbHqaeGEKq9c63vQc63w=
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=

@@ -45,7 +45,7 @@ func NewCmdRun(ctx context.Context, out, errOut io.Writer) *cobra.Command {
 			if err := o.Validate(args); err != nil {
 				return err
 			}
-			if err := o.RunProxyServer(ctx); err != nil {
+			if err := o.Run(ctx); err != nil {
 				return err
 			}
 			return nil
