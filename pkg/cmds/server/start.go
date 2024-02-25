@@ -181,19 +181,23 @@ func (o LicenseProxyServerOptions) RunProxyServer(ctx context.Context) error {
 		return err
 	}
 
-	restConfig, err := rest.InClusterConfig()
+	cfg, err := rest.InClusterConfig()
 	if err != nil {
 		return err
 	}
 
-	mapper, err := apiutil.NewDynamicRESTMapper(restConfig)
+	hc, err := rest.HTTPClientFor(cfg)
 	if err != nil {
 		return err
 	}
-	cl, err := client.New(restConfig, client.Options{
+	mapper, err := apiutil.NewDynamicRESTMapper(cfg, hc)
+	if err != nil {
+		return err
+	}
+	cl, err := client.New(cfg, client.Options{
 		Scheme: apiserver.Scheme,
 		Mapper: mapper,
-		Opts: client.WarningHandlerOptions{
+		WarningHandler: client.WarningHandlerOptions{
 			SuppressWarnings:   true,
 			AllowDuplicateLogs: false,
 		},
@@ -261,15 +265,19 @@ func (o LicenseProxyServerOptions) RunProxyServer(ctx context.Context) error {
 
 		konfig = clientcmd2.NewNonInteractiveClientConfig(apiConfig, apiConfig.CurrentContext, &clientcmd2.ConfigOverrides{}, nil)
 		// hub restConfig
-		restConfig, err = konfig.ClientConfig()
+		cfg, err = konfig.ClientConfig()
 		if err != nil {
 			return err
 		}
 
-		hubClient, err := client.New(restConfig, client.Options{
+		mapper, err := apiutil.NewDynamicRESTMapper(cfg, hc)
+		if err != nil {
+			return err
+		}
+		hubClient, err := client.New(cfg, client.Options{
 			Scheme: apiserver.Scheme,
 			Mapper: mapper,
-			Opts: client.WarningHandlerOptions{
+			WarningHandler: client.WarningHandlerOptions{
 				SuppressWarnings:   true,
 				AllowDuplicateLogs: false,
 			},
@@ -281,7 +289,7 @@ func (o LicenseProxyServerOptions) RunProxyServer(ctx context.Context) error {
 		fr := &ocm.SecretReconciler{
 			Client:          hubClient, // hub cluster client
 			InClusterClient: server.Manager.GetClient(),
-			RestConfig:      restConfig, // hub restConfig
+			RestConfig:      cfg, // hub restConfig
 			ClusterName:     kl.Spec.ClusterName,
 		}
 		if err := fr.SetupWithManager(server.Manager); err != nil {

@@ -33,11 +33,11 @@ func NewCmdRun(ctx context.Context, out, errOut io.Writer) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:               "run",
-		Short:             "Launch a UI API server",
-		Long:              "Launch a UI API server",
+		Short:             "Launch a License proxy server",
+		Long:              "Launch a License proxy server",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			klog.Infof("Starting ui server version %s+%s ...", v.Version.Version, v.Version.CommitHash)
+			klog.Infof("Starting license proxyserver version %s+%s ...", v.Version.Version, v.Version.CommitHash)
 
 			if err := o.Complete(); err != nil {
 				return err

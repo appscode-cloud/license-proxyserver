@@ -31,7 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -89,14 +88,14 @@ func (r *SecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			return obj.GetName() == LicenseSecret && obj.GetNamespace() == r.ClusterName
 		}))).
 		Watches(
-			&source.Kind{Type: &v1.Secret{}},
+			&v1.Secret{},
 			handler.EnqueueRequestsFromMapFunc(r.findSecrets()),
 		).
 		Complete(r)
 }
 
 func (r *SecretReconciler) findSecrets() handler.MapFunc {
-	return func(object client.Object) []reconcile.Request {
+	return func(ctx context.Context, object client.Object) []reconcile.Request {
 		req := make([]reconcile.Request, 0)
 		req = append(req, reconcile.Request{
 			NamespacedName: types.NamespacedName{

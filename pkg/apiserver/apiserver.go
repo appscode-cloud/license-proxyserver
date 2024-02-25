@@ -192,14 +192,18 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 	}
 
 	// create client
-	mapper, err := apiutil.NewDynamicRESTMapper(cfg)
+	hc, err := restclient.HTTPClientFor(cfg)
+	if err != nil {
+		return nil, err
+	}
+	mapper, err := apiutil.NewDynamicRESTMapper(cfg, hc)
 	if err != nil {
 		return nil, err
 	}
 	cc, err := client.New(cfg, client.Options{
 		Scheme: Scheme,
 		Mapper: mapper,
-		Opts: client.WarningHandlerOptions{
+		WarningHandler: client.WarningHandlerOptions{
 			SuppressWarnings:   true,
 			AllowDuplicateLogs: false,
 		},
