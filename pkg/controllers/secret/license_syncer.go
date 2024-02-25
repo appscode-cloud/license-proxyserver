@@ -19,18 +19,16 @@ package secret
 import (
 	"context"
 
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	"go.bytebuilders.dev/license-proxyserver/apis/proxyserver"
+
+	core "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-)
-
-const (
-	LicenseSecret = "license-proxyserver-licenses"
 )
 
 type LicenseSyncer struct {
@@ -43,22 +41,22 @@ func (r *LicenseSyncer) Reconcile(ctx context.Context, request reconcile.Request
 	logger.Info("Start reconciling")
 
 	// get hub cluster licenses secret
-	sec := v1.Secret{}
+	sec := core.Secret{}
 	err := r.HubClient.Get(ctx, request.NamespacedName, &sec)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	// get spoke cluster license secret
-	licenseSecret := &v1.Secret{
+	licenseSecret := &core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      LicenseSecret,
+			Name:      proxyserver.LicenseSecret,
 			Namespace: meta_util.PodNamespace(),
 		},
 	}
 	err = r.SpokeClient.Get(context.Background(), client.ObjectKey{Name: licenseSecret.Name, Namespace: licenseSecret.Namespace}, licenseSecret)
 	switch {
-	case errors.IsNotFound(err):
+	case apierrors.IsNotFound(err):
 		err = r.SpokeClient.Create(context.Background(), licenseSecret)
 		return reconcile.Result{}, err
 	case err != nil:
@@ -78,6 +76,6 @@ func (r *LicenseSyncer) Reconcile(ctx context.Context, request reconcile.Request
 // Manager is configured to only watch license secret
 func (r *LicenseSyncer) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1.Secret{}).
+		For(&core.Secret{}).
 		Complete(r)
 }

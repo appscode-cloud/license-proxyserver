@@ -34,7 +34,7 @@ import (
 
 	"gomodules.xyz/x/ioutil"
 	core "k8s.io/api/core/v1"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -50,7 +50,7 @@ import (
 	"k8s.io/klog/v2/klogr"
 	cu "kmodules.xyz/client-go/client"
 	clustermeta "kmodules.xyz/client-go/cluster"
-	ocmcluster "open-cluster-management.io/api/cluster/v1alpha1"
+	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	ocmoperator "open-cluster-management.io/api/operator/v1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -70,7 +70,7 @@ var (
 func init() {
 	proxyserverinstall.Install(Scheme)
 	utilruntime.Must(clientgoscheme.AddToScheme(Scheme))
-	utilruntime.Must(ocmcluster.Install(Scheme))
+	utilruntime.Must(clusterv1alpha1.Install(Scheme))
 	utilruntime.Must(ocmoperator.Install(Scheme))
 	utilruntime.Must(core.AddToScheme(Scheme))
 
@@ -228,16 +228,16 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 
 		// create clusterClaim ID
 		err = spokeManager.Add(manager.RunnableFunc(func(ctx context.Context) error {
-			claim := ocmcluster.ClusterClaim{
+			claim := clusterv1alpha1.ClusterClaim{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "id.k8s.io",
+					Name: proxyserver.ClusterClaimClusterID,
 				},
-				Spec: ocmcluster.ClusterClaimSpec{
+				Spec: clusterv1alpha1.ClusterClaimSpec{
 					Value: cid,
 				},
 			}
 			err := spokeManager.GetClient().Get(context.TODO(), client.ObjectKey{Name: claim.Name}, &claim)
-			if kerr.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				return spokeManager.GetClient().Create(context.TODO(), &claim)
 			}
 			return err
@@ -273,7 +273,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 					&core.Secret{}: {
 						Namespaces: map[string]cache.Config{
 							kl.Spec.ClusterName: {
-								FieldSelector: fields.OneTermEqualSelector("metadata.name", secret.LicenseSecret),
+								FieldSelector: fields.OneTermEqualSelector("metadata.name", proxyserver.LicenseSecret),
 							},
 						},
 					},

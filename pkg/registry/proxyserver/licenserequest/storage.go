@@ -23,6 +23,7 @@ import (
 	"sort"
 	"strings"
 
+	"go.bytebuilders.dev/license-proxyserver/apis/proxyserver"
 	proxyv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
 	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
 	verifier "go.bytebuilders.dev/license-verifier"
@@ -30,18 +31,15 @@ import (
 	pc "go.bytebuilders.dev/license-verifier/client"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
-	ocmcluster "open-cluster-management.io/api/cluster/v1alpha1"
+	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-const LicenseClusterClaim = "licenses.appscode.com"
 
 type Storage struct {
 	cid         string
@@ -99,9 +97,9 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 	if err != nil {
 		return nil, err
 	} else if l == nil {
-		ca := ocmcluster.ClusterClaim{
+		ca := clusterv1alpha1.ClusterClaim{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: LicenseClusterClaim,
+				Name: proxyserver.ClusterClaimLicense,
 			},
 		}
 		err = r.spokeClient.Get(context.TODO(), client.ObjectKey{Name: ca.Name}, &ca)
@@ -119,7 +117,7 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 					return nil, err
 				}
 			}
-		} else if kerr.IsNotFound(err) {
+		} else if apierrors.IsNotFound(err) {
 			reqFeatures := req.Request.Features
 			sort.Strings(reqFeatures)
 			ca.Spec.Value = strings.Join(reqFeatures, ",")
