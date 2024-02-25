@@ -19,6 +19,8 @@ package cmds
 import (
 	"os"
 
+	"go.bytebuilders.dev/license-proxyserver/pkg/manager"
+
 	"github.com/spf13/cobra"
 	v "gomodules.xyz/x/version"
 	genericapiserver "k8s.io/apiserver/pkg/server"
@@ -34,6 +36,7 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(v.NewCmdVersion())
 	ctx := genericapiserver.SetupSignalContext()
 	rootCmd.AddCommand(NewCmdRun(ctx, os.Stdout, os.Stderr))
+	rootCmd.AddCommand(manager.NewManagerCommand())
 
 	return rootCmd
 }

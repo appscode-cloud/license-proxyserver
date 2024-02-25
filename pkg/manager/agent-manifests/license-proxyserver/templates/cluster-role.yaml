@@ -1,0 +1,25 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "license-proxyserver.fullname" . }}
+  labels:
+    {{- include "license-proxyserver.labels" . | nindent 4 }}
+rules:
+# Get cluster id
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs: ["get"]
+# ocm cluster claim
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - clusterclaims
+  verbs: ["get", "create", "update"]
+# ocm cluster name detection
+- apiGroups:
+  - operator.open-cluster-management.io
+  resources:
+  - klusterlets
+  verbs: ["get"]
