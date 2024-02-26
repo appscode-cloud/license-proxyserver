@@ -19,9 +19,11 @@ package manager
 import (
 	"fmt"
 
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
 	agentapi "open-cluster-management.io/addon-framework/pkg/agent"
 	"open-cluster-management.io/api/addon/v1alpha1"
@@ -37,6 +39,8 @@ func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = clusterv1.Install(scheme)
 	_ = clusterv1alpha1.Install(scheme)
+	_ = apiregistrationv1.AddToScheme(scheme)
+	_ = monitoringv1.AddToScheme(scheme)
 }
 
 func GetConfigValues(opts *ManagerOptions) addonfactory.GetValuesFunc {
