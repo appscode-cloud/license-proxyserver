@@ -539,7 +539,7 @@ gomodules.xyz/sets
 # gomodules.xyz/wait v0.2.0
 ## explicit; go 1.14
 gomodules.xyz/wait
-# gomodules.xyz/x v0.0.16
+# gomodules.xyz/x v0.0.17
 ## explicit; go 1.22.0
 gomodules.xyz/x/ioutil
 gomodules.xyz/x/version

@@ -12,7 +12,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	go.bytebuilders.dev/license-verifier v0.14.0
 	gomodules.xyz/logs v0.0.7
-	gomodules.xyz/x v0.0.16
+	gomodules.xyz/x v0.0.17
 	k8s.io/api v0.29.1
 	k8s.io/apimachinery v0.29.1
 	k8s.io/apiserver v0.29.0

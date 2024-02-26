@@ -17,12 +17,10 @@ limitations under the License.
 package proxyserver
 
 const (
-	ClusterClaimClusterID             = "id.k8s.io"
-	ClusterClaimLicense               = "licenses.appscode.com"
-	LicenseSecret                     = "license-proxyserver-licenses"
-	LicenseProxyServerHelmReleaseName = "license-proxyserver"
-	LicenseProxyServerNamespace       = "kubeops"
-	HubKubeconfigSecretName           = "license-proxyserver-hub-kubeconfig"
+	ClusterClaimClusterID   = "id.k8s.io"
+	ClusterClaimLicense     = "licenses.appscode.com"
+	LicenseSecret           = "license-proxyserver-licenses"
+	HubKubeconfigSecretName = "license-proxyserver-hub-kubeconfig"
 )
 
 const (

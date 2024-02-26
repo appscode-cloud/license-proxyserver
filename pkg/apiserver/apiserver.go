@@ -158,6 +158,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 			Cache: &client.CacheOptions{
 				DisableFor: []client.Object{
 					&core.Pod{},
+					&core.Secret{},
 				},
 			},
 		},
@@ -263,7 +264,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 
 		s.HubManager, err = manager.New(hubConfig, manager.Options{
 			Scheme:                 Scheme,
-			Metrics:                metricsserver.Options{BindAddress: ""},
+			Metrics:                metricsserver.Options{BindAddress: "0"},
 			HealthProbeBindAddress: "",
 			LeaderElection:         false,
 			LeaderElectionID:       "5b87adeb-hub.proxyserver.licenses.appscode.com",
