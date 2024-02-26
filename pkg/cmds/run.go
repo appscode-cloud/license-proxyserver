@@ -17,18 +17,18 @@ limitations under the License.
 package cmds
 
 import (
-	"context"
 	"io"
 
 	"go.bytebuilders.dev/license-proxyserver/pkg/cmds/server"
 
 	"github.com/spf13/cobra"
 	v "gomodules.xyz/x/version"
+	genericapiserver "k8s.io/apiserver/pkg/server"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/klog/v2"
 )
 
-func NewCmdRun(ctx context.Context, out, errOut io.Writer) *cobra.Command {
+func NewCmdRun(out, errOut io.Writer) *cobra.Command {
 	o := server.NewUIServerOptions(out, errOut)
 
 	cmd := &cobra.Command{
@@ -38,6 +38,8 @@ func NewCmdRun(ctx context.Context, out, errOut io.Writer) *cobra.Command {
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			klog.Infof("Starting license proxyserver version %s+%s ...", v.Version.Version, v.Version.CommitHash)
+
+			ctx := genericapiserver.SetupSignalContext()
 
 			if err := o.Complete(); err != nil {
 				return err

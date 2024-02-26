@@ -23,7 +23,6 @@ import (
 
 	"github.com/spf13/cobra"
 	v "gomodules.xyz/x/version"
-	genericapiserver "k8s.io/apiserver/pkg/server"
 )
 
 func NewRootCmd() *cobra.Command {
@@ -34,8 +33,7 @@ func NewRootCmd() *cobra.Command {
 	}
 
 	rootCmd.AddCommand(v.NewCmdVersion())
-	ctx := genericapiserver.SetupSignalContext()
-	rootCmd.AddCommand(NewCmdRun(ctx, os.Stdout, os.Stderr))
+	rootCmd.AddCommand(NewCmdRun(os.Stdout, os.Stderr))
 	rootCmd.AddCommand(manager.NewManagerCommand())
 
 	return rootCmd
