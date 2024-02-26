@@ -19,6 +19,8 @@ package manager
 import (
 	"fmt"
 
+	"go.bytebuilders.dev/license-proxyserver/apis/proxyserver"
+
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -70,6 +72,12 @@ func GetConfigValues(opts *ManagerOptions) addonfactory.GetValuesFunc {
 		}
 		if opts.Token != "" {
 			err = unstructured.SetNestedField(values, opts.Token, "platform", "token")
+			if err != nil {
+				return nil, err
+			}
+		}
+		if opts.Token != "" {
+			err = unstructured.SetNestedField(values, proxyserver.HubKubeconfigSecretName, "hubKubeconfigSecretName")
 			if err != nil {
 				return nil, err
 			}

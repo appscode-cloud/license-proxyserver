@@ -22,6 +22,7 @@ const (
 	LicenseSecret                     = "license-proxyserver-licenses"
 	LicenseProxyServerHelmReleaseName = "license-proxyserver"
 	LicenseProxyServerNamespace       = "kubeops"
+	HubKubeconfigSecretName           = "license-proxyserver-hub-kubeconfig"
 )
 
 const (
