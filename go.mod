@@ -7,6 +7,7 @@ replace open-cluster-management.io/addon-framework => github.com/kluster-manager
 require (
 	github.com/google/gofuzz v1.2.0
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.71.2
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	go.bytebuilders.dev/license-verifier v0.14.0
@@ -18,6 +19,7 @@ require (
 	k8s.io/client-go v0.29.1
 	k8s.io/component-base v0.29.1
 	k8s.io/klog/v2 v2.110.1
+	k8s.io/kube-aggregator v0.29.0
 	k8s.io/kube-openapi v0.0.0-20231129212854-f0671cc7e66a
 	k8s.io/utils v0.0.0-20240102154912-e7106e64919e
 	kmodules.xyz/client-go v0.29.10
@@ -94,7 +96,6 @@ require (
 	github.com/nxadm/tail v1.4.11 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
-	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.18.0 // indirect
 	github.com/prometheus/client_model v0.5.0 // indirect
 	github.com/prometheus/common v0.45.0 // indirect
