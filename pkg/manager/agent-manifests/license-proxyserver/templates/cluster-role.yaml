@@ -16,13 +16,13 @@ rules:
   - ""
   resources:
   - secrets
-  verbs: ["create", "update"]
+  verbs: ["get", "create", "update", "list", "watch"]
 # ocm cluster claim
 - apiGroups:
   - cluster.open-cluster-management.io
   resources:
   - clusterclaims
-  verbs: ["get", "create", "update"]
+  verbs: ["get", "create", "update", "list", "watch"]
 # ocm cluster name detection
 - apiGroups:
   - operator.open-cluster-management.io

@@ -26,5 +26,5 @@ const (
 const (
 	ConfigName = "license-proxyserver-config"
 
-	ConfigNamespace = "license-proxyserver-addon"
+	ConfigNamespace = "open-cluster-management-license-proxyserver"
 )

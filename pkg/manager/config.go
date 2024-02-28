@@ -17,11 +17,13 @@ limitations under the License.
 package manager
 
 import (
+	"context"
 	"fmt"
 
 	"go.bytebuilders.dev/license-proxyserver/apis/proxyserver"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -32,6 +34,7 @@ import (
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	workv1 "open-cluster-management.io/api/work/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -45,8 +48,19 @@ func init() {
 	_ = monitoringv1.AddToScheme(scheme)
 }
 
-func GetConfigValues(opts *ManagerOptions) addonfactory.GetValuesFunc {
+func GetConfigValues(opts *ManagerOptions, kc client.Client) addonfactory.GetValuesFunc {
 	return func(cluster *clusterv1.ManagedCluster, addon *v1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
+		var config core.Secret
+		if err := kc.Get(context.TODO(), client.ObjectKey{Name: proxyserver.ConfigName, Namespace: proxyserver.ConfigNamespace}, &config); err != nil {
+			return nil, err
+		}
+
+		var overrideValues map[string]any
+		err := yaml.Unmarshal(config.Data["values.yaml"], &overrideValues)
+		if err != nil {
+			return nil, err
+		}
+
 		data, err := FS.ReadFile("agent-manifests/license-proxyserver/values.yaml")
 		if err != nil {
 			return nil, err
@@ -58,32 +72,32 @@ func GetConfigValues(opts *ManagerOptions) addonfactory.GetValuesFunc {
 			return nil, err
 		}
 
+		vals := addonfactory.MergeValues(values, overrideValues)
 		if opts.RegistryFQDN != "" {
-			err = unstructured.SetNestedField(values, opts.RegistryFQDN, "registryFQDN")
+			err = unstructured.SetNestedField(vals, opts.RegistryFQDN, "registryFQDN")
 			if err != nil {
 				return nil, err
 			}
 		}
 		if opts.BaseURL != "" {
-			err = unstructured.SetNestedField(values, opts.BaseURL, "platform", "baseURL")
+			err = unstructured.SetNestedField(vals, opts.BaseURL, "platform", "baseURL")
 			if err != nil {
 				return nil, err
 			}
 		}
 		if opts.Token != "" {
-			err = unstructured.SetNestedField(values, opts.Token, "platform", "token")
+			err = unstructured.SetNestedField(vals, opts.Token, "platform", "token")
 			if err != nil {
 				return nil, err
 			}
 		}
 		if opts.Token != "" {
-			err = unstructured.SetNestedField(values, proxyserver.HubKubeconfigSecretName, "hubKubeconfigSecretName")
+			err = unstructured.SetNestedField(vals, proxyserver.HubKubeconfigSecretName, "hubKubeconfigSecretName")
 			if err != nil {
 				return nil, err
 			}
 		}
-
-		return values, nil
+		return vals, nil
 	}
 }
 
