@@ -16,6 +16,8 @@ limitations under the License.
 
 package common
 
+import "time"
+
 const (
 	ClusterClaimClusterID   = "id.k8s.io"
 	ClusterClaimLicense     = "licenses.appscode.com"
@@ -28,6 +30,9 @@ const (
 	AgentName                  = "license-proxyserver"
 	AgentManifestsDir          = "agent-manifests/license-proxyserver"
 	AddonInstallationNamespace = "kubeops"
-	AgentDeploymentName        = "license-proxyserver"
 	AgentConfigSecretName      = "license-proxyserver-config"
+
+	Duration10Yrs  = 10 * 365 * 24 * time.Hour
+	CACertName     = "ca"
+	ServerCertName = "tls"
 )

@@ -17,25 +17,23 @@ limitations under the License.
 package manager
 
 import (
-	"context"
+	"encoding/base64"
 	"fmt"
 
 	"go.bytebuilders.dev/license-proxyserver/pkg/common"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	core "k8s.io/api/core/v1"
+	"gomodules.xyz/cert/certstore"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
-	meta_util "kmodules.xyz/client-go/meta"
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
 	agentapi "open-cluster-management.io/addon-framework/pkg/agent"
 	"open-cluster-management.io/api/addon/v1alpha1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	workv1 "open-cluster-management.io/api/work/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -49,17 +47,26 @@ func init() {
 	_ = monitoringv1.AddToScheme(scheme)
 }
 
-func GetConfigValues(opts *ManagerOptions, kc client.Client) addonfactory.GetValuesFunc {
+func GetConfigValues(opts *ManagerOptions, cs *certstore.CertStore) addonfactory.GetValuesFunc {
 	return func(cluster *clusterv1.ManagedCluster, addon *v1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
-		var config core.Secret
-		if err := kc.Get(context.TODO(), client.ObjectKey{Name: common.AgentConfigSecretName, Namespace: meta_util.PodNamespace()}, &config); err != nil {
+		caCrtBytes, _, err := cs.ReadBytes(common.CACertName)
+		if err != nil {
 			return nil, err
 		}
 
-		var overrideValues map[string]any
-		err := yaml.Unmarshal(config.Data["values.yaml"], &overrideValues)
+		crtBytes, keyBytes, err := cs.ReadBytes(common.ServerCertName)
 		if err != nil {
 			return nil, err
+		}
+		overrideValues := map[string]any{
+			"apiserver": map[string]any{
+				"servingCerts": map[string]any{
+					"generate":  true,
+					"caCrt":     base64.StdEncoding.EncodeToString(caCrtBytes),
+					"serverCrt": base64.StdEncoding.EncodeToString(crtBytes),
+					"serverKey": base64.StdEncoding.EncodeToString(keyBytes),
+				},
+			},
 		}
 
 		data, err := FS.ReadFile("agent-manifests/license-proxyserver/values.yaml")
@@ -111,7 +118,7 @@ func agentHealthProber() *agentapi.HealthProber {
 					ResourceIdentifier: workv1.ResourceIdentifier{
 						Group:     "apps",
 						Resource:  "deployments",
-						Name:      common.AgentDeploymentName,
+						Name:      common.AgentName,
 						Namespace: common.AddonInstallationNamespace,
 					},
 					ProbeRules: []workv1.FeedbackRule{
