@@ -80,7 +80,7 @@ func (r *LicenseAcquirer) Reconcile(ctx context.Context, request reconcile.Reque
 		}
 	}
 	if cid != "" && len(features) > 0 {
-		err = r.reconcile(managedCluster.Name, cid, features)
+		err = r.reconcile(ctx, managedCluster.Name, cid, features)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -108,7 +108,7 @@ func (r *LicenseAcquirer) getLicenseRegistry(cid string) (*storage.LicenseRegist
 	return reg, nil
 }
 
-func (r *LicenseAcquirer) reconcile(clusterName, cid string, features []string) error {
+func (r *LicenseAcquirer) reconcile(ctx context.Context, clusterName, cid string, features []string) error {
 	sec := core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      common.LicenseSecret,
@@ -133,7 +133,7 @@ func (r *LicenseAcquirer) reconcile(clusterName, cid string, features []string) 
 		l, found := reg.LicenseForFeature(feature)
 		if !found {
 			var c *v1alpha1.Contract
-			l, c, err = r.getNewLicense(cid, features)
+			l, c, err = r.getNewLicense(ctx, cid, []string{feature})
 			if err != nil {
 				return err
 			}
@@ -149,7 +149,9 @@ func (r *LicenseAcquirer) reconcile(clusterName, cid string, features []string) 
 	}
 }
 
-func (r *LicenseAcquirer) getNewLicense(cid string, features []string) (*v1alpha1.License, *v1alpha1.Contract, error) {
+func (r *LicenseAcquirer) getNewLicense(ctx context.Context, cid string, features []string) (*v1alpha1.License, *v1alpha1.Contract, error) {
+	logger := log.FromContext(ctx)
+
 	lc, err := pc.NewClient(r.BaseURL, r.Token, cid)
 	if err != nil {
 		return nil, nil, err
@@ -159,6 +161,7 @@ func (r *LicenseAcquirer) getNewLicense(cid string, features []string) (*v1alpha
 	if err != nil {
 		return nil, nil, err
 	}
+	logger.Info("acquired new license", "cid", cid, "features", strings.Join(features, ","))
 
 	caData, err := info.LoadLicenseCA()
 	if err != nil {
