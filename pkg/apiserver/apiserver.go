@@ -264,7 +264,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		}
 
 		s.HubManager, err = manager.New(hubConfig, manager.Options{
-			Scheme:                 Scheme,
+			Scheme:                 clientgoscheme.Scheme,
 			Metrics:                metricsserver.Options{BindAddress: "0"},
 			HealthProbeBindAddress: "",
 			LeaderElection:         false,
@@ -290,7 +290,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		if err := (&secret.LicenseSyncer{
 			HubClient:   s.HubManager.GetClient(),
 			SpokeClient: spokeManager.GetClient(),
-		}).SetupWithManager(spokeManager); err != nil {
+		}).SetupWithManager(s.HubManager); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "LicenseSyncer")
 			os.Exit(1)
 		}
