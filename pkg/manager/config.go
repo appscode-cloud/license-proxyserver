@@ -105,6 +105,11 @@ func GetConfigValues(opts *ManagerOptions, cs *certstore.CertStore) addonfactory
 				return nil, err
 			}
 		}
+		err = unstructured.SetNestedField(vals, "Always", "imagePullPolicy")
+		if err != nil {
+			return nil, err
+		}
+
 		return vals, nil
 	}
 }

@@ -19,7 +19,6 @@ package licenserequest
 import (
 	"context"
 	"crypto/x509"
-	"fmt"
 	"sort"
 	"strings"
 
@@ -128,7 +127,7 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 		} else if err != nil {
 			return nil, err
 		}
-		return nil, fmt.Errorf("requested license from hub")
+		return req, nil
 	}
 
 	r.rb.Record(l.ID, req.Request.Features, user)
