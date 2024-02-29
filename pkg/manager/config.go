@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	"go.bytebuilders.dev/license-proxyserver/apis/proxyserver"
+	"go.bytebuilders.dev/license-proxyserver/pkg/common"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	core "k8s.io/api/core/v1"
@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
 	agentapi "open-cluster-management.io/addon-framework/pkg/agent"
 	"open-cluster-management.io/api/addon/v1alpha1"
@@ -51,7 +52,7 @@ func init() {
 func GetConfigValues(opts *ManagerOptions, kc client.Client) addonfactory.GetValuesFunc {
 	return func(cluster *clusterv1.ManagedCluster, addon *v1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
 		var config core.Secret
-		if err := kc.Get(context.TODO(), client.ObjectKey{Name: proxyserver.ConfigName, Namespace: proxyserver.ConfigNamespace}, &config); err != nil {
+		if err := kc.Get(context.TODO(), client.ObjectKey{Name: common.AgentConfigSecretName, Namespace: meta_util.PodNamespace()}, &config); err != nil {
 			return nil, err
 		}
 
@@ -92,7 +93,7 @@ func GetConfigValues(opts *ManagerOptions, kc client.Client) addonfactory.GetVal
 			}
 		}
 		if opts.Token != "" {
-			err = unstructured.SetNestedField(vals, proxyserver.HubKubeconfigSecretName, "hubKubeconfigSecretName")
+			err = unstructured.SetNestedField(vals, common.HubKubeconfigSecretName, "hubKubeconfigSecretName")
 			if err != nil {
 				return nil, err
 			}
@@ -110,8 +111,8 @@ func agentHealthProber() *agentapi.HealthProber {
 					ResourceIdentifier: workv1.ResourceIdentifier{
 						Group:     "apps",
 						Resource:  "deployments",
-						Name:      "license-proxyserver",
-						Namespace: AddonInstallationNamespace,
+						Name:      common.AgentDeploymentName,
+						Namespace: common.AddonInstallationNamespace,
 					},
 					ProbeRules: []workv1.FeedbackRule{
 						{

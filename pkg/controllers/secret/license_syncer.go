@@ -19,7 +19,7 @@ package secret
 import (
 	"context"
 
-	"go.bytebuilders.dev/license-proxyserver/apis/proxyserver"
+	"go.bytebuilders.dev/license-proxyserver/pkg/common"
 
 	core "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -50,7 +50,7 @@ func (r *LicenseSyncer) Reconcile(ctx context.Context, request reconcile.Request
 	// get spoke cluster license secret
 	licenseSecret := &core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      proxyserver.LicenseSecret,
+			Name:      common.LicenseSecret,
 			Namespace: meta_util.PodNamespace(),
 		},
 	}

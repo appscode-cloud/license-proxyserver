@@ -21,6 +21,7 @@ import (
 	"embed"
 	"os"
 
+	"go.bytebuilders.dev/license-proxyserver/pkg/common"
 	"go.bytebuilders.dev/license-proxyserver/pkg/manager/rbac"
 	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
 
@@ -44,20 +45,13 @@ import (
 //go:embed all:agent-manifests
 var FS embed.FS
 
-const (
-	AddonName                  = "license-proxyserver"
-	AgentName                  = "license-proxyserver"
-	AgentManifestsDir          = "agent-manifests/license-proxyserver"
-	AddonInstallationNamespace = "kubeops"
-)
-
 func NewRegistrationOption(kubeConfig *rest.Config, addonName, agentName string) *agent.RegistrationOption {
 	return &agent.RegistrationOption{
 		CSRConfigurations: agent.KubeClientSignerConfigurations(addonName, agentName),
 		CSRApproveCheck:   agent.ApprovalAllCSRs,
 		PermissionConfig:  rbac.SetupPermission(kubeConfig, agentName),
 		AgentInstallNamespace: func(addon *v1alpha1.ManagedClusterAddOn) string {
-			return AddonInstallationNamespace
+			return common.AddonInstallationNamespace
 		},
 	}
 }
@@ -66,7 +60,7 @@ func NewManagerCommand() *cobra.Command {
 	opts := NewManagerOptions()
 
 	cmd := cmdfactory.
-		NewControllerCommandConfig(AddonName, version.Get(), func(ctx context.Context, config *rest.Config) error {
+		NewControllerCommandConfig(common.AddonName, version.Get(), func(ctx context.Context, config *rest.Config) error {
 			return runManagerController(ctx, config, opts)
 		}).
 		NewCommand()
@@ -103,18 +97,18 @@ func runManagerController(ctx context.Context, cfg *rest.Config, opts *ManagerOp
 		os.Exit(1)
 	}
 
-	registrationOption := NewRegistrationOption(cfg, AddonName, AgentName)
+	registrationOption := NewRegistrationOption(cfg, common.AddonName, common.AgentName)
 
 	addonManager, err := addonmanager.New(cfg)
 	if err != nil {
 		return err
 	}
-	agent, err := addonfactory.NewAgentAddonFactory(AddonName, FS, AgentManifestsDir).
+	agent, err := addonfactory.NewAgentAddonFactory(common.AddonName, FS, common.AgentManifestsDir).
 		WithScheme(scheme).
 		WithGetValuesFuncs(GetConfigValues(opts, hubManager.GetClient())).
 		WithAgentRegistrationOption(registrationOption).
 		WithAgentHealthProber(agentHealthProber()).
-		WithAgentInstallNamespace(func(addon *v1alpha1.ManagedClusterAddOn) string { return AddonInstallationNamespace }).
+		WithAgentInstallNamespace(func(addon *v1alpha1.ManagedClusterAddOn) string { return common.AddonInstallationNamespace }).
 		WithCreateAgentInstallNamespace().
 		BuildHelmAgentAddon()
 	if err != nil {

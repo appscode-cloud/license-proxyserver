@@ -24,6 +24,7 @@ import (
 	"go.bytebuilders.dev/license-proxyserver/apis/proxyserver"
 	proxyserverinstall "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/install"
 	proxyserverv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
+	"go.bytebuilders.dev/license-proxyserver/pkg/common"
 	"go.bytebuilders.dev/license-proxyserver/pkg/controllers/secret"
 	"go.bytebuilders.dev/license-proxyserver/pkg/registry/proxyserver/licenserequest"
 	"go.bytebuilders.dev/license-proxyserver/pkg/registry/proxyserver/licensestatus"
@@ -231,7 +232,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		err = spokeManager.Add(manager.RunnableFunc(func(ctx context.Context) error {
 			claim := clusterv1alpha1.ClusterClaim{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: proxyserver.ClusterClaimClusterID,
+					Name: common.ClusterClaimClusterID,
 				},
 				Spec: clusterv1alpha1.ClusterClaimSpec{
 					Value: cid,
@@ -274,7 +275,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 					&core.Secret{}: {
 						Namespaces: map[string]cache.Config{
 							kl.Spec.ClusterName: {
-								FieldSelector: fields.OneTermEqualSelector("metadata.name", proxyserver.LicenseSecret),
+								FieldSelector: fields.OneTermEqualSelector("metadata.name", common.LicenseSecret),
 							},
 						},
 					},
