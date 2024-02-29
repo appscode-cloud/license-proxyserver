@@ -61,7 +61,7 @@ func GetConfigValues(opts *ManagerOptions, cs *certstore.CertStore) addonfactory
 		overrideValues := map[string]any{
 			"apiserver": map[string]any{
 				"servingCerts": map[string]any{
-					"generate":  true,
+					"generate":  false,
 					"caCrt":     base64.StdEncoding.EncodeToString(caCrtBytes),
 					"serverCrt": base64.StdEncoding.EncodeToString(crtBytes),
 					"serverKey": base64.StdEncoding.EncodeToString(keyBytes),
