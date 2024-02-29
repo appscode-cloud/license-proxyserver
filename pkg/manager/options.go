@@ -32,7 +32,7 @@ func NewManagerOptions() *ManagerOptions {
 }
 
 func (s *ManagerOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&s.RegistryFQDN, "registryFQDN", s.RegistryFQDN, "Docker registry FQDN used for license proxyserver image")
+	fs.StringVar(&s.RegistryFQDN, "registryFQDN", s.RegistryFQDN, "Docker registry FQDN used for agent image")
 	fs.StringVar(&s.BaseURL, "baseURL", s.BaseURL, "License server base url")
 	fs.StringVar(&s.Token, "token", s.Token, "License server token")
 	fs.StringVar(&s.CacheDir, "cache-dir", s.CacheDir, "Path to license cache directory")
