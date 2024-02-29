@@ -18,12 +18,14 @@ package secret
 
 import (
 	"context"
+	"fmt"
 
 	"go.bytebuilders.dev/license-proxyserver/pkg/common"
 
 	core "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kutil "kmodules.xyz/client-go"
+	cu "kmodules.xyz/client-go/client"
 	meta_util "kmodules.xyz/client-go/meta"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,32 +43,29 @@ func (r *LicenseSyncer) Reconcile(ctx context.Context, request reconcile.Request
 	logger.Info("Start reconciling")
 
 	// get hub cluster licenses secret
-	sec := core.Secret{}
-	err := r.HubClient.Get(ctx, request.NamespacedName, &sec)
+	src := core.Secret{}
+	err := r.HubClient.Get(ctx, request.NamespacedName, &src)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	// get spoke cluster license secret
-	licenseSecret := &core.Secret{
+	dst := core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      common.LicenseSecret,
 			Namespace: meta_util.PodNamespace(),
 		},
 	}
-	err = r.SpokeClient.Get(context.Background(), client.ObjectKey{Name: licenseSecret.Name, Namespace: licenseSecret.Namespace}, licenseSecret)
-	switch {
-	case apierrors.IsNotFound(err):
-		err = r.SpokeClient.Create(context.Background(), licenseSecret)
-		return reconcile.Result{}, err
-	case err != nil:
-		return reconcile.Result{}, err
-	}
-
-	licenseSecret.Data = sec.Data
-	err = r.SpokeClient.Update(context.Background(), licenseSecret)
+	kt, err := cu.CreateOrPatch(ctx, r.SpokeClient, &dst, func(obj client.Object, createOp bool) client.Object {
+		in := obj.(*core.Secret)
+		in.Data = src.Data
+		return in
+	})
 	if err != nil {
 		return reconcile.Result{}, err
+	}
+	if kt != kutil.VerbUnchanged {
+		logger.Info(fmt.Sprintf("%s secret %s/%s", kt, dst.Namespace, dst.Name))
 	}
 
 	return reconcile.Result{}, nil
