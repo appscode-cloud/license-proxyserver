@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package proxyserver
+package common
+
+import "time"
 
 const (
 	ClusterClaimClusterID   = "id.k8s.io"
@@ -24,7 +26,13 @@ const (
 )
 
 const (
-	ConfigName = "license-proxyserver-config"
+	AddonName                  = "license-proxyserver"
+	AgentName                  = "license-proxyserver"
+	AgentManifestsDir          = "agent-manifests/license-proxyserver"
+	AddonInstallationNamespace = "kubeops"
+	AgentConfigSecretName      = "license-proxyserver-config"
 
-	ConfigNamespace = "license-proxyserver-addon"
+	Duration10Yrs  = 10 * 365 * 24 * time.Hour
+	CACertName     = "ca"
+	ServerCertName = "tls"
 )

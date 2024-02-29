@@ -19,17 +19,24 @@ package manager
 import (
 	"context"
 	"embed"
+	"fmt"
 	"os"
 
+	"go.bytebuilders.dev/license-proxyserver/pkg/common"
 	"go.bytebuilders.dev/license-proxyserver/pkg/manager/rbac"
+	"go.bytebuilders.dev/license-proxyserver/pkg/secretfs"
 	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
 
 	"github.com/spf13/cobra"
+	"gomodules.xyz/cert"
+	"gomodules.xyz/cert/certstore"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/component-base/version"
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/klogr"
 	cu "kmodules.xyz/client-go/client"
+	meta_util "kmodules.xyz/client-go/meta"
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 	"open-cluster-management.io/addon-framework/pkg/agent"
@@ -44,20 +51,13 @@ import (
 //go:embed all:agent-manifests
 var FS embed.FS
 
-const (
-	AddonName                  = "license-proxyserver"
-	AgentName                  = "license-proxyserver"
-	AgentManifestsDir          = "agent-manifests/license-proxyserver"
-	AddonInstallationNamespace = "kubeops"
-)
-
 func NewRegistrationOption(kubeConfig *rest.Config, addonName, agentName string) *agent.RegistrationOption {
 	return &agent.RegistrationOption{
 		CSRConfigurations: agent.KubeClientSignerConfigurations(addonName, agentName),
 		CSRApproveCheck:   agent.ApprovalAllCSRs,
 		PermissionConfig:  rbac.SetupPermission(kubeConfig, agentName),
 		AgentInstallNamespace: func(addon *v1alpha1.ManagedClusterAddOn) string {
-			return AddonInstallationNamespace
+			return common.AddonInstallationNamespace
 		},
 	}
 }
@@ -66,7 +66,7 @@ func NewManagerCommand() *cobra.Command {
 	opts := NewManagerOptions()
 
 	cmd := cmdfactory.
-		NewControllerCommandConfig(AddonName, version.Get(), func(ctx context.Context, config *rest.Config) error {
+		NewControllerCommandConfig(common.AddonName, version.Get(), func(ctx context.Context, config *rest.Config) error {
 			return runManagerController(ctx, config, opts)
 		}).
 		NewCommand()
@@ -92,6 +92,28 @@ func runManagerController(ctx context.Context, cfg *rest.Config, opts *ManagerOp
 		return err
 	}
 
+	agentCertSecretFS := secretfs.New(hubManager.GetClient(), types.NamespacedName{
+		Namespace: meta_util.PodNamespace(),
+		Name:      common.AgentConfigSecretName,
+	})
+	cs := certstore.New(agentCertSecretFS, "", common.Duration10Yrs)
+	if err := hubManager.Add(manager.RunnableFunc(func(ctx context.Context) error {
+		err = cs.InitCA()
+		if err != nil {
+			return err
+		}
+
+		_, _, err := cs.GetServerCertPair(common.ServerCertName, cert.AltNames{
+			DNSNames: []string{
+				fmt.Sprintf("%s.%s", common.AgentName, common.AddonInstallationNamespace),
+				fmt.Sprintf("%s.%s.svc", common.AgentName, common.AddonInstallationNamespace),
+			},
+		})
+		return err
+	})); err != nil {
+		klog.Error(err, "unable to initialize cert store")
+		os.Exit(1)
+	}
 	if err := (&LicenseAcquirer{
 		Client:       hubManager.GetClient(),
 		BaseURL:      opts.BaseURL,
@@ -103,18 +125,18 @@ func runManagerController(ctx context.Context, cfg *rest.Config, opts *ManagerOp
 		os.Exit(1)
 	}
 
-	registrationOption := NewRegistrationOption(cfg, AddonName, AgentName)
+	registrationOption := NewRegistrationOption(cfg, common.AddonName, common.AgentName)
 
 	addonManager, err := addonmanager.New(cfg)
 	if err != nil {
 		return err
 	}
-	agent, err := addonfactory.NewAgentAddonFactory(AddonName, FS, AgentManifestsDir).
+	agent, err := addonfactory.NewAgentAddonFactory(common.AddonName, FS, common.AgentManifestsDir).
 		WithScheme(scheme).
-		WithGetValuesFuncs(GetConfigValues(opts)).
+		WithGetValuesFuncs(GetConfigValues(opts, cs)).
 		WithAgentRegistrationOption(registrationOption).
 		WithAgentHealthProber(agentHealthProber()).
-		WithAgentInstallNamespace(func(addon *v1alpha1.ManagedClusterAddOn) string { return AddonInstallationNamespace }).
+		WithAgentInstallNamespace(func(addon *v1alpha1.ManagedClusterAddOn) string { return common.AddonInstallationNamespace }).
 		WithCreateAgentInstallNamespace().
 		BuildHelmAgentAddon()
 	if err != nil {

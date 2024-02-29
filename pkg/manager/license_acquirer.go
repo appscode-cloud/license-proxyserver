@@ -22,7 +22,7 @@ import (
 	"strings"
 	"sync"
 
-	"go.bytebuilders.dev/license-proxyserver/apis/proxyserver"
+	"go.bytebuilders.dev/license-proxyserver/pkg/common"
 	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
 	verifier "go.bytebuilders.dev/license-verifier"
 	"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
@@ -71,10 +71,10 @@ func (r *LicenseAcquirer) Reconcile(ctx context.Context, request reconcile.Reque
 	var cid string
 	var features []string
 	for _, claim := range managedCluster.Status.ClusterClaims {
-		if claim.Name == proxyserver.ClusterClaimClusterID {
+		if claim.Name == common.ClusterClaimClusterID {
 			cid = claim.Value
 		}
-		if claim.Name == proxyserver.ClusterClaimLicense {
+		if claim.Name == common.ClusterClaimLicense {
 			features = strings.Split(claim.Value, ",")
 		}
 	}
@@ -105,7 +105,7 @@ func (r *LicenseAcquirer) getLicenseRegistry(cid string) *storage.LicenseRegistr
 func (r *LicenseAcquirer) reconcile(clusterName, cid string, features []string) error {
 	sec := core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      proxyserver.LicenseSecret,
+			Name:      common.LicenseSecret,
 			Namespace: clusterName,
 		},
 	}

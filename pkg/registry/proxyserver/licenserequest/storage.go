@@ -23,8 +23,8 @@ import (
 	"sort"
 	"strings"
 
-	"go.bytebuilders.dev/license-proxyserver/apis/proxyserver"
 	proxyv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
+	"go.bytebuilders.dev/license-proxyserver/pkg/common"
 	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
 	verifier "go.bytebuilders.dev/license-verifier"
 	"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
@@ -99,7 +99,7 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 	} else if l == nil {
 		ca := clusterv1alpha1.ClusterClaim{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: proxyserver.ClusterClaimLicense,
+				Name: common.ClusterClaimLicense,
 			},
 		}
 		err = r.spokeClient.Get(context.TODO(), client.ObjectKey{Name: ca.Name}, &ca)

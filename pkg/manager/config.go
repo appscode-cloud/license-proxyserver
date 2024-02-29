@@ -17,11 +17,13 @@ limitations under the License.
 package manager
 
 import (
+	"encoding/base64"
 	"fmt"
 
-	"go.bytebuilders.dev/license-proxyserver/apis/proxyserver"
+	"go.bytebuilders.dev/license-proxyserver/pkg/common"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"gomodules.xyz/cert/certstore"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -45,8 +47,28 @@ func init() {
 	_ = monitoringv1.AddToScheme(scheme)
 }
 
-func GetConfigValues(opts *ManagerOptions) addonfactory.GetValuesFunc {
+func GetConfigValues(opts *ManagerOptions, cs *certstore.CertStore) addonfactory.GetValuesFunc {
 	return func(cluster *clusterv1.ManagedCluster, addon *v1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
+		caCrtBytes, _, err := cs.ReadBytes(common.CACertName)
+		if err != nil {
+			return nil, err
+		}
+
+		crtBytes, keyBytes, err := cs.ReadBytes(common.ServerCertName)
+		if err != nil {
+			return nil, err
+		}
+		overrideValues := map[string]any{
+			"apiserver": map[string]any{
+				"servingCerts": map[string]any{
+					"generate":  true,
+					"caCrt":     base64.StdEncoding.EncodeToString(caCrtBytes),
+					"serverCrt": base64.StdEncoding.EncodeToString(crtBytes),
+					"serverKey": base64.StdEncoding.EncodeToString(keyBytes),
+				},
+			},
+		}
+
 		data, err := FS.ReadFile("agent-manifests/license-proxyserver/values.yaml")
 		if err != nil {
 			return nil, err
@@ -58,32 +80,32 @@ func GetConfigValues(opts *ManagerOptions) addonfactory.GetValuesFunc {
 			return nil, err
 		}
 
+		vals := addonfactory.MergeValues(values, overrideValues)
 		if opts.RegistryFQDN != "" {
-			err = unstructured.SetNestedField(values, opts.RegistryFQDN, "registryFQDN")
+			err = unstructured.SetNestedField(vals, opts.RegistryFQDN, "registryFQDN")
 			if err != nil {
 				return nil, err
 			}
 		}
 		if opts.BaseURL != "" {
-			err = unstructured.SetNestedField(values, opts.BaseURL, "platform", "baseURL")
+			err = unstructured.SetNestedField(vals, opts.BaseURL, "platform", "baseURL")
 			if err != nil {
 				return nil, err
 			}
 		}
 		if opts.Token != "" {
-			err = unstructured.SetNestedField(values, opts.Token, "platform", "token")
+			err = unstructured.SetNestedField(vals, opts.Token, "platform", "token")
 			if err != nil {
 				return nil, err
 			}
 		}
 		if opts.Token != "" {
-			err = unstructured.SetNestedField(values, proxyserver.HubKubeconfigSecretName, "hubKubeconfigSecretName")
+			err = unstructured.SetNestedField(vals, common.HubKubeconfigSecretName, "hubKubeconfigSecretName")
 			if err != nil {
 				return nil, err
 			}
 		}
-
-		return values, nil
+		return vals, nil
 	}
 }
 
@@ -96,8 +118,8 @@ func agentHealthProber() *agentapi.HealthProber {
 					ResourceIdentifier: workv1.ResourceIdentifier{
 						Group:     "apps",
 						Resource:  "deployments",
-						Name:      "license-proxyserver",
-						Namespace: AddonInstallationNamespace,
+						Name:      common.AgentName,
+						Namespace: common.AddonInstallationNamespace,
 					},
 					ProbeRules: []workv1.FeedbackRule{
 						{
