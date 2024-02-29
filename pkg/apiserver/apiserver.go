@@ -33,7 +33,6 @@ import (
 	pc "go.bytebuilders.dev/license-verifier/client"
 	"go.bytebuilders.dev/license-verifier/info"
 
-	"github.com/fsnotify/fsnotify"
 	core "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,7 +47,6 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/klogr"
 	cu "kmodules.xyz/client-go/client"
 	clustermeta "kmodules.xyz/client-go/cluster"
@@ -291,56 +289,11 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		if err := (&secret.LicenseSyncer{
 			HubClient:   s.HubManager.GetClient(),
 			SpokeClient: spokeManager.GetClient(),
+			ClusterID:   cid,
+			CaCert:      caCert,
+			R:           reg,
 		}).SetupWithManager(s.HubManager); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "LicenseSyncer")
-			os.Exit(1)
-		}
-
-		err = spokeManager.Add(manager.RunnableFunc(func(ctx context.Context) error {
-			// adapted from: https://github.com/fsnotify/fsnotify/blob/main/cmd/fsnotify/file.go
-			// Create new watcher.
-			watcher, err := fsnotify.NewWatcher()
-			if err != nil {
-				setupLog.Error(err, "failed to create license dir watcher")
-				os.Exit(1)
-			}
-
-			// Start listening for events.
-			go func() {
-				for {
-					select {
-					case event, ok := <-watcher.Events:
-						if !ok { // Channel was closed (i.e. Watcher.Close() was called).
-							return
-						}
-						if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
-							klog.Infoln("created/modified file:", event.Name)
-							if err := storage.LoadDir(cid, c.ExtraConfig.LicenseDir, reg); err != nil {
-								klog.ErrorS(err, "failed to reload license dir")
-							}
-						}
-					case err, ok := <-watcher.Errors:
-						if !ok { // Channel was closed (i.e. Watcher.Close() was called).
-							return
-						}
-						klog.ErrorS(err, "watcher channel closed")
-					}
-				}
-			}()
-
-			// Add a path.
-			err = watcher.Add(c.ExtraConfig.LicenseDir)
-			if err != nil {
-				setupLog.Error(err, "failed to start watching", "dir", c.ExtraConfig.LicenseDir)
-				os.Exit(1)
-			}
-
-			// Block main goroutine forever.
-			<-ctx.Done()
-			return watcher.Close()
-		}))
-		if err != nil {
-			setupLog.Error(err, "failed to setup license file watcher")
 			os.Exit(1)
 		}
 	}

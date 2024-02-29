@@ -18,9 +18,12 @@ package secret
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 
 	"go.bytebuilders.dev/license-proxyserver/pkg/common"
+	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
+	verifier "go.bytebuilders.dev/license-verifier"
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,6 +39,10 @@ import (
 type LicenseSyncer struct {
 	HubClient   client.Client
 	SpokeClient client.Client
+
+	ClusterID string
+	CaCert    *x509.Certificate
+	R         *storage.LicenseRegistry
 }
 
 func (r *LicenseSyncer) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -47,6 +54,12 @@ func (r *LicenseSyncer) Reconcile(ctx context.Context, request reconcile.Request
 	err := r.HubClient.Get(ctx, request.NamespacedName, &src)
 	if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	for _, entry := range src.Data {
+		if err := r.addLicense(entry); err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
 	// get spoke cluster license secret
@@ -77,4 +90,17 @@ func (r *LicenseSyncer) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&core.Secret{}).
 		Complete(r)
+}
+
+func (r *LicenseSyncer) addLicense(data []byte) error {
+	license, err := verifier.ParseLicense(verifier.ParserOptions{
+		ClusterUID: r.ClusterID,
+		CACert:     r.CaCert,
+		License:    data,
+	})
+	if err != nil {
+		return err
+	}
+	r.R.Add(&license, nil)
+	return nil
 }
