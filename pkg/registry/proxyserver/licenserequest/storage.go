@@ -127,6 +127,9 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 		} else if err != nil {
 			return nil, err
 		}
+
+		// return blank response instead of error
+		req.Response = &proxyv1alpha1.LicenseRequestResponse{}
 		return req, nil
 	}
 
