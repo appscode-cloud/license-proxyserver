@@ -18,6 +18,7 @@ package manager
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -88,18 +89,23 @@ func (r *LicenseAcquirer) Reconcile(ctx context.Context, request reconcile.Reque
 	return reconcile.Result{}, nil
 }
 
-func (r *LicenseAcquirer) getLicenseRegistry(cid string) *storage.LicenseRegistry {
+func (r *LicenseAcquirer) getLicenseRegistry(cid string) (*storage.LicenseRegistry, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	reg, found := r.LicenseCache[cid]
 	if found {
-		return reg
+		return reg, nil
 	}
 
-	reg = storage.NewLicenseRegistry(filepath.Join(r.CacheDir, cid), nil)
+	dir := filepath.Join(r.CacheDir, cid)
+	err := os.MkdirAll(dir, 0o755)
+	if err != nil {
+		return nil, err
+	}
+	reg = storage.NewLicenseRegistry(dir, nil)
 	r.LicenseCache[cid] = reg
-	return reg
+	return reg, nil
 }
 
 func (r *LicenseAcquirer) reconcile(clusterName, cid string, features []string) error {
@@ -119,7 +125,10 @@ func (r *LicenseAcquirer) reconcile(clusterName, cid string, features []string) 
 		return err
 	}
 
-	reg := r.getLicenseRegistry(cid)
+	reg, err := r.getLicenseRegistry(cid)
+	if err != nil {
+		return err
+	}
 	for _, feature := range features {
 		l, found := reg.LicenseForFeature(feature)
 		if !found {
