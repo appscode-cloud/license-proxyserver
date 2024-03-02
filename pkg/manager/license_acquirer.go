@@ -72,10 +72,10 @@ func (r *LicenseAcquirer) Reconcile(ctx context.Context, request reconcile.Reque
 	var cid string
 	var features []string
 	for _, claim := range managedCluster.Status.ClusterClaims {
-		if claim.Name == common.ClusterClaimClusterID {
+		switch claim.Name {
+		case common.ClusterClaimClusterID:
 			cid = claim.Value
-		}
-		if claim.Name == common.ClusterClaimLicense {
+		case common.ClusterClaimLicense:
 			features = strings.Split(claim.Value, ",")
 		}
 	}
