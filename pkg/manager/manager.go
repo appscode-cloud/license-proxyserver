@@ -36,7 +36,6 @@ import (
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/klogr"
 	cu "kmodules.xyz/client-go/client"
-	meta_util "kmodules.xyz/client-go/meta"
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 	"open-cluster-management.io/addon-framework/pkg/agent"
@@ -93,8 +92,8 @@ func runManagerController(ctx context.Context, cfg *rest.Config, opts *ManagerOp
 	}
 
 	agentCertSecretFS := secretfs.New(hubManager.GetClient(), types.NamespacedName{
-		Namespace: meta_util.PodNamespace(),
 		Name:      common.AgentConfigSecretName,
+		Namespace: common.Namespace(),
 	})
 	cs := certstore.New(agentCertSecretFS, "", common.Duration10Yrs)
 	if err := hubManager.Add(manager.RunnableFunc(func(ctx context.Context) error {

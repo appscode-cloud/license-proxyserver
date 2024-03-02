@@ -29,7 +29,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kutil "kmodules.xyz/client-go"
 	cu "kmodules.xyz/client-go/client"
-	meta_util "kmodules.xyz/client-go/meta"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -66,7 +65,7 @@ func (r *LicenseSyncer) Reconcile(ctx context.Context, request reconcile.Request
 	dst := core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      common.LicenseSecret,
-			Namespace: meta_util.PodNamespace(),
+			Namespace: common.Namespace(),
 		},
 	}
 	kt, err := cu.CreateOrPatch(ctx, r.SpokeClient, &dst, func(obj client.Object, createOp bool) client.Object {

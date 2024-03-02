@@ -16,7 +16,12 @@ limitations under the License.
 
 package common
 
-import "time"
+import (
+	"os"
+	"time"
+
+	meta_util "kmodules.xyz/client-go/meta"
+)
 
 const (
 	ClusterClaimClusterID   = "id.k8s.io"
@@ -36,3 +41,11 @@ const (
 	CACertName     = "ca"
 	ServerCertName = "tls"
 )
+
+func Namespace() string {
+	ns := os.Getenv("NAMESPACE") // addon manager namespace in case of ocm-mc
+	if ns != "" {
+		return ns
+	}
+	return meta_util.PodNamespace() // host name in case of ocm-mc
+}
