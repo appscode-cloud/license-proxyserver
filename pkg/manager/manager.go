@@ -55,8 +55,8 @@ func NewRegistrationOption(kubeConfig *rest.Config, addonName, agentName string)
 		CSRConfigurations: agent.KubeClientSignerConfigurations(addonName, agentName),
 		CSRApproveCheck:   agent.ApprovalAllCSRs,
 		PermissionConfig:  rbac.SetupPermission(kubeConfig, agentName),
-		AgentInstallNamespace: func(addon *v1alpha1.ManagedClusterAddOn) string {
-			return common.AddonInstallationNamespace
+		AgentInstallNamespace: func(addon *v1alpha1.ManagedClusterAddOn) (string, error) {
+			return common.AddonInstallationNamespace, nil
 		},
 	}
 }
@@ -135,8 +135,9 @@ func runManagerController(ctx context.Context, cfg *rest.Config, opts *ManagerOp
 		WithGetValuesFuncs(GetConfigValues(opts, cs)).
 		WithAgentRegistrationOption(registrationOption).
 		WithAgentHealthProber(agentHealthProber()).
-		WithAgentInstallNamespace(func(addon *v1alpha1.ManagedClusterAddOn) string { return common.AddonInstallationNamespace }).
-		WithCreateAgentInstallNamespace().
+		WithAgentInstallNamespace(func(addon *v1alpha1.ManagedClusterAddOn) (string, error) {
+			return common.AddonInstallationNamespace, nil
+		}).
 		BuildHelmAgentAddon()
 	if err != nil {
 		klog.Errorf("Failed to build agent: `%v`", err)

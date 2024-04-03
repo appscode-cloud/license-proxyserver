@@ -2,8 +2,6 @@ module go.bytebuilders.dev/license-proxyserver
 
 go 1.22.0
 
-replace open-cluster-management.io/addon-framework => github.com/kluster-manager/addon-framework v0.9.1-0.20240311172228-479bd0233527
-
 require (
 	github.com/google/gofuzz v1.2.0
 	github.com/pkg/errors v0.9.1
@@ -26,7 +24,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20231129212854-f0671cc7e66a
 	k8s.io/utils v0.0.0-20240102154912-e7106e64919e
 	kmodules.xyz/client-go v0.29.10
-	open-cluster-management.io/addon-framework v0.9.0
+	open-cluster-management.io/addon-framework v0.9.1-0.20240402013859-be542a6d0a9c
 	open-cluster-management.io/api v0.13.0
 	sigs.k8s.io/controller-runtime v0.17.2
 	sigs.k8s.io/yaml v1.4.0
