@@ -109,6 +109,10 @@ func GetConfigValues(opts *ManagerOptions, cs *certstore.CertStore) addonfactory
 		if err != nil {
 			return nil, err
 		}
+		err = unstructured.SetNestedField(vals, cluster.Name, "clusterName")
+		if err != nil {
+			return nil, err
+		}
 
 		return vals, nil
 	}

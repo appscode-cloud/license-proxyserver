@@ -31,7 +31,8 @@ type ExtraOptions struct {
 	LicenseDir string
 	CacheDir   string
 
-	HubKubeconfig string
+	HubKubeconfig    string
+	SpokeClusterName string
 }
 
 func NewExtraOptions() *ExtraOptions {
@@ -49,6 +50,7 @@ func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.LicenseDir, "license-dir", s.LicenseDir, "Path to license directory")
 	fs.StringVar(&s.CacheDir, "cache-dir", s.CacheDir, "Path to license cache directory")
 	fs.StringVar(&s.HubKubeconfig, "hub-kubeconfig", s.HubKubeconfig, "Path to hub kubeconfig")
+	fs.StringVar(&s.SpokeClusterName, "cluster-name", s.SpokeClusterName, "Spoke Cluster name")
 }
 
 func (s *ExtraOptions) ApplyTo(cfg *apiserver.ExtraConfig) error {
@@ -57,6 +59,7 @@ func (s *ExtraOptions) ApplyTo(cfg *apiserver.ExtraConfig) error {
 	cfg.LicenseDir = s.LicenseDir
 	cfg.CacheDir = s.CacheDir
 	cfg.HubKubeconfig = s.HubKubeconfig
+	cfg.SpokeClusterName = s.SpokeClusterName
 	cfg.ClientConfig.QPS = float32(s.QPS)
 	cfg.ClientConfig.Burst = s.Burst
 

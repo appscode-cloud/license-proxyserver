@@ -91,12 +91,13 @@ func init() {
 
 // ExtraConfig holds custom apiserver config
 type ExtraConfig struct {
-	ClientConfig  *restclient.Config
-	BaseURL       string
-	Token         string
-	LicenseDir    string
-	CacheDir      string
-	HubKubeconfig string
+	ClientConfig     *restclient.Config
+	BaseURL          string
+	Token            string
+	LicenseDir       string
+	CacheDir         string
+	HubKubeconfig    string
+	SpokeClusterName string
 }
 
 // Config defines the config for the apiserver
@@ -220,6 +221,9 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 	}
 
 	if isSpokeCluster {
+		if c.ExtraConfig.SpokeClusterName == "" {
+			return nil, fmt.Errorf("missing --cluster-name")
+		}
 		if c.ExtraConfig.HubKubeconfig == "" {
 			return nil, fmt.Errorf("missing --hub-kubeconfig")
 		}
@@ -248,13 +252,6 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 			os.Exit(1)
 		}
 
-		// get klusterlet
-		kl := ocmoperator.Klusterlet{}
-		err = spokeManager.GetAPIReader().Get(context.Background(), client.ObjectKey{Name: "klusterlet"}, &kl)
-		if err != nil {
-			return nil, err
-		}
-
 		// get hub kubeconfig
 		hubConfig, err := clientcmd.BuildConfigFromFlags("", c.ExtraConfig.HubKubeconfig)
 		if err != nil {
@@ -273,7 +270,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 				ByObject: map[client.Object]cache.ByObject{
 					&core.Secret{}: {
 						Namespaces: map[string]cache.Config{
-							kl.Spec.ClusterName: {
+							c.ExtraConfig.SpokeClusterName: {
 								FieldSelector: fields.OneTermEqualSelector("metadata.name", common.LicenseSecret),
 							},
 						},
