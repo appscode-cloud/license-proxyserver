@@ -51,7 +51,6 @@ import (
 	cu "kmodules.xyz/client-go/client"
 	clustermeta "kmodules.xyz/client-go/cluster"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
-	ocmoperator "open-cluster-management.io/api/operator/v1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -71,7 +70,6 @@ func init() {
 	proxyserverinstall.Install(Scheme)
 	utilruntime.Must(clientgoscheme.AddToScheme(Scheme))
 	utilruntime.Must(clusterv1alpha1.Install(Scheme))
-	utilruntime.Must(ocmoperator.Install(Scheme))
 	utilruntime.Must(core.AddToScheme(Scheme))
 
 	// we need to add the options to empty v1
