@@ -51,7 +51,6 @@ import (
 	cu "kmodules.xyz/client-go/client"
 	clustermeta "kmodules.xyz/client-go/cluster"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
-	ocmoperator "open-cluster-management.io/api/operator/v1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -71,7 +70,6 @@ func init() {
 	proxyserverinstall.Install(Scheme)
 	utilruntime.Must(clientgoscheme.AddToScheme(Scheme))
 	utilruntime.Must(clusterv1alpha1.Install(Scheme))
-	utilruntime.Must(ocmoperator.Install(Scheme))
 	utilruntime.Must(core.AddToScheme(Scheme))
 
 	// we need to add the options to empty v1
@@ -91,12 +89,13 @@ func init() {
 
 // ExtraConfig holds custom apiserver config
 type ExtraConfig struct {
-	ClientConfig  *restclient.Config
-	BaseURL       string
-	Token         string
-	LicenseDir    string
-	CacheDir      string
-	HubKubeconfig string
+	ClientConfig     *restclient.Config
+	BaseURL          string
+	Token            string
+	LicenseDir       string
+	CacheDir         string
+	HubKubeconfig    string
+	SpokeClusterName string
 }
 
 // Config defines the config for the apiserver
@@ -220,6 +219,9 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 	}
 
 	if isSpokeCluster {
+		if c.ExtraConfig.SpokeClusterName == "" {
+			return nil, fmt.Errorf("missing --cluster-name")
+		}
 		if c.ExtraConfig.HubKubeconfig == "" {
 			return nil, fmt.Errorf("missing --hub-kubeconfig")
 		}
@@ -248,13 +250,6 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 			os.Exit(1)
 		}
 
-		// get klusterlet
-		kl := ocmoperator.Klusterlet{}
-		err = spokeManager.GetAPIReader().Get(context.Background(), client.ObjectKey{Name: "klusterlet"}, &kl)
-		if err != nil {
-			return nil, err
-		}
-
 		// get hub kubeconfig
 		hubConfig, err := clientcmd.BuildConfigFromFlags("", c.ExtraConfig.HubKubeconfig)
 		if err != nil {
@@ -273,7 +268,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 				ByObject: map[client.Object]cache.ByObject{
 					&core.Secret{}: {
 						Namespaces: map[string]cache.Config{
-							kl.Spec.ClusterName: {
+							c.ExtraConfig.SpokeClusterName: {
 								FieldSelector: fields.OneTermEqualSelector("metadata.name", common.LicenseSecret),
 							},
 						},
