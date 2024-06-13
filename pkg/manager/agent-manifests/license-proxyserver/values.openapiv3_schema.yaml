@@ -443,6 +443,8 @@ properties:
     - useKubeapiserverFqdnForAks
     - versionPriority
     type: object
+  clusterName:
+    type: string
   criticalAddon:
     type: boolean
   encodedLicenses:
@@ -602,9 +604,10 @@ properties:
         type: string
       token:
         type: string
+      tokenSecretName:
+        type: string
     required:
     - baseURL
-    - token
     type: object
   podAnnotations:
     additionalProperties:
