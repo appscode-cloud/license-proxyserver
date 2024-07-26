@@ -34,7 +34,6 @@ import (
 	"go.bytebuilders.dev/license-verifier/info"
 
 	core "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -227,27 +226,6 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		}
 		if c.ExtraConfig.LicenseDir == "" {
 			return nil, fmt.Errorf("missing --license-dir")
-		}
-
-		// create clusterClaim ID
-		err = spokeManager.Add(manager.RunnableFunc(func(ctx context.Context) error {
-			claim := clusterv1alpha1.ClusterClaim{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: common.ClusterClaimClusterID,
-				},
-				Spec: clusterv1alpha1.ClusterClaimSpec{
-					Value: cid,
-				},
-			}
-			err := spokeManager.GetClient().Get(context.TODO(), client.ObjectKey{Name: claim.Name}, &claim)
-			if apierrors.IsNotFound(err) {
-				return spokeManager.GetClient().Create(context.TODO(), &claim)
-			}
-			return err
-		}))
-		if err != nil {
-			setupLog.Error(err, "failed to setup id clusterclaim updater")
-			os.Exit(1)
 		}
 
 		// get hub kubeconfig
