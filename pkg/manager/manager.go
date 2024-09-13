@@ -27,6 +27,7 @@ import (
 	"go.bytebuilders.dev/license-proxyserver/pkg/secretfs"
 	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gomodules.xyz/cert"
 	"gomodules.xyz/cert/certstore"
@@ -34,7 +35,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/component-base/version"
 	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/klogr"
 	cu "kmodules.xyz/client-go/client"
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
@@ -77,7 +77,7 @@ func NewManagerCommand() *cobra.Command {
 }
 
 func runManagerController(ctx context.Context, cfg *rest.Config, opts *ManagerOptions) error {
-	log.SetLogger(klogr.New()) // nolint:staticcheck
+	log.SetLogger(klog.NewKlogr())
 
 	hubManager, err := ctrl.NewManager(cfg, manager.Options{
 		Scheme:                 scheme,
@@ -113,12 +113,22 @@ func runManagerController(ctx context.Context, cfg *rest.Config, opts *ManagerOp
 		klog.Error(err, "unable to initialize cert store")
 		os.Exit(1)
 	}
+
+	var caCert []byte
+	if opts.CAFile != "" {
+		caCert, err = os.ReadFile(opts.CAFile)
+		if err != nil {
+			return errors.Wrapf(err, "failed to read CA file %s", opts.CAFile)
+		}
+	}
 	if err := (&LicenseAcquirer{
-		Client:       hubManager.GetClient(),
-		BaseURL:      opts.BaseURL,
-		Token:        opts.Token,
-		CacheDir:     opts.CacheDir,
-		LicenseCache: map[string]*storage.LicenseRegistry{},
+		Client:                hubManager.GetClient(),
+		BaseURL:               opts.BaseURL,
+		Token:                 opts.Token,
+		CaCert:                caCert,
+		InsecureSkipVerifyTLS: opts.InsecureSkipVerifyTLS,
+		CacheDir:              opts.CacheDir,
+		LicenseCache:          map[string]*storage.LicenseRegistry{},
 	}).SetupWithManager(hubManager); err != nil {
 		klog.Error(err, "unable to register LicenseAcquirer")
 		os.Exit(1)

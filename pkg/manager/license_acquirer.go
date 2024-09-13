@@ -42,9 +42,11 @@ import (
 
 type LicenseAcquirer struct {
 	client.Client
-	BaseURL  string
-	Token    string
-	CacheDir string
+	BaseURL               string
+	Token                 string
+	CaCert                []byte
+	InsecureSkipVerifyTLS bool
+	CacheDir              string
 
 	mu           sync.Mutex
 	LicenseCache map[string]*storage.LicenseRegistry
@@ -152,7 +154,7 @@ func (r *LicenseAcquirer) reconcile(ctx context.Context, clusterName, cid string
 func (r *LicenseAcquirer) getNewLicense(ctx context.Context, cid string, features []string) (*v1alpha1.License, *v1alpha1.Contract, error) {
 	logger := log.FromContext(ctx)
 
-	lc, err := pc.NewClient(r.BaseURL, r.Token, cid)
+	lc, err := pc.NewClient(r.BaseURL, r.Token, cid, r.CaCert, r.InsecureSkipVerifyTLS)
 	if err != nil {
 		return nil, nil, err
 	}
