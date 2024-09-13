@@ -8,7 +8,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.71.2
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/license-verifier v0.14.1
+	go.bytebuilders.dev/license-verifier v0.14.2-0.20240913064552-791722d3451a
 	gocloud.dev v0.26.0
 	gomodules.xyz/blobfs v0.1.14
 	gomodules.xyz/cert v1.6.0
@@ -163,6 +163,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.30.1 // indirect
 	k8s.io/cli-runtime v0.30.1 // indirect
 	k8s.io/kms v0.30.1 // indirect
+	moul.io/http2curl/v2 v2.3.1-0.20221024080105-10c404f653f7 // indirect
 	open-cluster-management.io/sdk-go v0.14.0 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.29.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
