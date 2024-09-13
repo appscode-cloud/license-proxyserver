@@ -92,7 +92,7 @@ type ExtraConfig struct {
 	BaseURL               string
 	Token                 string
 	CACert                []byte
-	InsecureSkipVerifyTLS bool
+	InsecureSkipTLSVerify bool
 	LicenseDir            string
 	CacheDir              string
 	HubKubeconfig         string
@@ -193,7 +193,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		if c.ExtraConfig.Token == "" {
 			return nil, fmt.Errorf("missing --token")
 		}
-		lc, err = licenseclient.NewClient(c.ExtraConfig.BaseURL, c.ExtraConfig.Token, cid, c.ExtraConfig.CACert, c.ExtraConfig.InsecureSkipVerifyTLS)
+		lc, err = licenseclient.NewClient(c.ExtraConfig.BaseURL, c.ExtraConfig.Token, cid, c.ExtraConfig.CACert, c.ExtraConfig.InsecureSkipTLSVerify)
 		if err != nil {
 			return nil, err
 		}

@@ -32,7 +32,7 @@ type ExtraOptions struct {
 	BaseURL               string
 	Token                 string
 	CAFile                string
-	InsecureSkipVerifyTLS bool
+	InsecureSkipTLSVerify bool
 	LicenseDir            string
 	CacheDir              string
 
@@ -53,7 +53,7 @@ func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.BaseURL, "baseURL", s.BaseURL, "License server base url")
 	fs.StringVar(&s.Token, "token", s.Token, "License server token")
 	fs.StringVar(&s.CAFile, "ca-file", s.CAFile, "Path to custom CA cert file used to issue appscode.com cert")
-	fs.BoolVar(&s.InsecureSkipVerifyTLS, "insecure-skip-verify-tls", s.InsecureSkipVerifyTLS, "If true, skips verifying appscode.com cert")
+	fs.BoolVar(&s.InsecureSkipTLSVerify, "insecure-skip-tls-verify", s.InsecureSkipTLSVerify, "If true, skips verifying appscode.com cert")
 	fs.StringVar(&s.LicenseDir, "license-dir", s.LicenseDir, "Path to license directory")
 	fs.StringVar(&s.CacheDir, "cache-dir", s.CacheDir, "Path to license cache directory")
 	fs.StringVar(&s.HubKubeconfig, "hub-kubeconfig", s.HubKubeconfig, "Path to hub kubeconfig")
@@ -70,7 +70,7 @@ func (s *ExtraOptions) ApplyTo(cfg *apiserver.ExtraConfig) error {
 		}
 		cfg.CACert = caCert
 	}
-	cfg.InsecureSkipVerifyTLS = s.InsecureSkipVerifyTLS
+	cfg.InsecureSkipTLSVerify = s.InsecureSkipTLSVerify
 	cfg.LicenseDir = s.LicenseDir
 	cfg.CacheDir = s.CacheDir
 	cfg.HubKubeconfig = s.HubKubeconfig

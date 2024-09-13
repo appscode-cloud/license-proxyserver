@@ -105,8 +105,8 @@ func GetConfigValues(opts *ManagerOptions, cs *certstore.CertStore) addonfactory
 				return nil, err
 			}
 		}
-		if opts.InsecureSkipVerifyTLS {
-			err = unstructured.SetNestedField(vals, opts.InsecureSkipVerifyTLS, "platform", "insecureSkipVerifyTLS")
+		if opts.InsecureSkipTLSVerify {
+			err = unstructured.SetNestedField(vals, opts.InsecureSkipTLSVerify, "platform", "insecureSkipTLSVerify")
 			if err != nil {
 				return nil, err
 			}

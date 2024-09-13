@@ -126,7 +126,7 @@ func runManagerController(ctx context.Context, cfg *rest.Config, opts *ManagerOp
 		BaseURL:               opts.BaseURL,
 		Token:                 opts.Token,
 		CaCert:                caCert,
-		InsecureSkipVerifyTLS: opts.InsecureSkipVerifyTLS,
+		InsecureSkipTLSVerify: opts.InsecureSkipTLSVerify,
 		CacheDir:              opts.CacheDir,
 		LicenseCache:          map[string]*storage.LicenseRegistry{},
 	}).SetupWithManager(hubManager); err != nil {
