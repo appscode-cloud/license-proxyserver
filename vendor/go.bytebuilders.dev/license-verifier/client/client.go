@@ -18,7 +18,11 @@ package client
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
+	"errors"
 	"io"
 	"net/http"
 
@@ -28,6 +32,8 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/klog/v2"
+	"moul.io/http2curl/v2"
 )
 
 type Client struct {
@@ -70,8 +76,20 @@ func (c *Client) AcquireLicense(features []string) ([]byte, *v1alpha1.Contract, 
 	if c.token != "" {
 		req.Header.Add("Authorization", "Bearer "+c.token)
 	}
+	if klog.V(8).Enabled() {
+		command, _ := http2curl.GetCurlCommand(req)
+		klog.V(8).Infoln(command.String())
+	}
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		var ce *tls.CertificateVerificationError
+		if errors.As(err, &ce) {
+			klog.ErrorS(err, "UnverifiedCertificates")
+			for _, cert := range ce.UnverifiedCertificates {
+				klog.Errorln(string(encodeCertPEM(cert)))
+			}
+		}
 		return nil, nil, err
 	}
 	defer resp.Body.Close()
@@ -102,4 +120,12 @@ func (c *Client) AcquireLicense(features []string) ([]byte, *v1alpha1.Contract, 
 		return nil, nil, err
 	}
 	return lc.License, lc.Contract, nil
+}
+
+func encodeCertPEM(cert *x509.Certificate) []byte {
+	block := pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: cert.Raw,
+	}
+	return pem.EncodeToMemory(&block)
 }

@@ -326,7 +326,7 @@ github.com/yudai/golcs
 # github.com/zeebo/xxh3 v1.0.2
 ## explicit; go 1.17
 github.com/zeebo/xxh3
-# go.bytebuilders.dev/license-verifier v0.14.1
+# go.bytebuilders.dev/license-verifier v0.14.2-0.20240913064552-791722d3451a
 ## explicit; go 1.21
 go.bytebuilders.dev/license-verifier
 go.bytebuilders.dev/license-verifier/apis/licenses
@@ -1431,6 +1431,9 @@ kmodules.xyz/client-go/core/v1
 kmodules.xyz/client-go/meta
 kmodules.xyz/client-go/openapi
 kmodules.xyz/client-go/tools/clientcmd
+# moul.io/http2curl/v2 v2.3.1-0.20221024080105-10c404f653f7
+## explicit; go 1.13
+moul.io/http2curl/v2
 # open-cluster-management.io/addon-framework v0.10.0
 ## explicit; go 1.21
 open-cluster-management.io/addon-framework/pkg/addonfactory
