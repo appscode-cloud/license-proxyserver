@@ -88,13 +88,15 @@ func init() {
 
 // ExtraConfig holds custom apiserver config
 type ExtraConfig struct {
-	ClientConfig     *restclient.Config
-	BaseURL          string
-	Token            string
-	LicenseDir       string
-	CacheDir         string
-	HubKubeconfig    string
-	SpokeClusterName string
+	ClientConfig          *restclient.Config
+	BaseURL               string
+	Token                 string
+	CACert                []byte
+	InsecureSkipVerifyTLS bool
+	LicenseDir            string
+	CacheDir              string
+	HubKubeconfig         string
+	SpokeClusterName      string
 }
 
 // Config defines the config for the apiserver
@@ -191,7 +193,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		if c.ExtraConfig.Token == "" {
 			return nil, fmt.Errorf("missing --token")
 		}
-		lc, err = licenseclient.NewClient(c.ExtraConfig.BaseURL, c.ExtraConfig.Token, cid)
+		lc, err = licenseclient.NewClient(c.ExtraConfig.BaseURL, c.ExtraConfig.Token, cid, c.ExtraConfig.CACert, c.ExtraConfig.InsecureSkipVerifyTLS)
 		if err != nil {
 			return nil, err
 		}

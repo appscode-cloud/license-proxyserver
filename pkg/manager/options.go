@@ -21,10 +21,12 @@ import (
 )
 
 type ManagerOptions struct {
-	RegistryFQDN string
-	BaseURL      string
-	Token        string
-	CacheDir     string
+	RegistryFQDN          string
+	BaseURL               string
+	Token                 string
+	CAFile                string
+	InsecureSkipVerifyTLS bool
+	CacheDir              string
 }
 
 func NewManagerOptions() *ManagerOptions {
@@ -35,6 +37,8 @@ func (s *ManagerOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.RegistryFQDN, "registryFQDN", s.RegistryFQDN, "Docker registry FQDN used for agent image")
 	fs.StringVar(&s.BaseURL, "baseURL", s.BaseURL, "License server base url")
 	fs.StringVar(&s.Token, "token", s.Token, "License server token")
+	fs.StringVar(&s.CAFile, "ca-file", s.CAFile, "Path to custom CA cert file used to issue appscode.com cert")
+	fs.BoolVar(&s.InsecureSkipVerifyTLS, "insecure-skip-verify-tls", s.InsecureSkipVerifyTLS, "If true, skips verifying appscode.com cert")
 	fs.StringVar(&s.CacheDir, "cache-dir", s.CacheDir, "Path to license cache directory")
 }
 

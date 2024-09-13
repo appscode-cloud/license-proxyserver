@@ -19,9 +19,11 @@ package manager
 import (
 	"encoding/base64"
 	"fmt"
+	"os"
 
 	"go.bytebuilders.dev/license-proxyserver/pkg/common"
 
+	"github.com/pkg/errors"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"gomodules.xyz/cert/certstore"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -89,6 +91,22 @@ func GetConfigValues(opts *ManagerOptions, cs *certstore.CertStore) addonfactory
 		}
 		if opts.BaseURL != "" {
 			err = unstructured.SetNestedField(vals, opts.BaseURL, "platform", "baseURL")
+			if err != nil {
+				return nil, err
+			}
+		}
+		if opts.CAFile != "" {
+			caCert, err := os.ReadFile(opts.CAFile)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to read CA file %s", opts.CAFile)
+			}
+			err = unstructured.SetNestedField(vals, string(caCert), "platform", "caBundle")
+			if err != nil {
+				return nil, err
+			}
+		}
+		if opts.InsecureSkipVerifyTLS {
+			err = unstructured.SetNestedField(vals, opts.InsecureSkipVerifyTLS, "platform", "insecureSkipVerifyTLS")
 			if err != nil {
 				return nil, err
 			}

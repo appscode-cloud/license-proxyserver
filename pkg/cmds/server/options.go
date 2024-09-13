@@ -17,8 +17,11 @@ limitations under the License.
 package server
 
 import (
+	"os"
+
 	"go.bytebuilders.dev/license-proxyserver/pkg/apiserver"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 )
 
@@ -26,10 +29,12 @@ type ExtraOptions struct {
 	QPS   float64
 	Burst int
 
-	BaseURL    string
-	Token      string
-	LicenseDir string
-	CacheDir   string
+	BaseURL               string
+	Token                 string
+	CAFile                string
+	InsecureSkipVerifyTLS bool
+	LicenseDir            string
+	CacheDir              string
 
 	HubKubeconfig    string
 	SpokeClusterName string
@@ -47,6 +52,8 @@ func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.IntVar(&s.Burst, "burst", s.Burst, "The maximum burst for throttle")
 	fs.StringVar(&s.BaseURL, "baseURL", s.BaseURL, "License server base url")
 	fs.StringVar(&s.Token, "token", s.Token, "License server token")
+	fs.StringVar(&s.CAFile, "ca-file", s.CAFile, "Path to custom CA cert file used to issue appscode.com cert")
+	fs.BoolVar(&s.InsecureSkipVerifyTLS, "insecure-skip-verify-tls", s.InsecureSkipVerifyTLS, "If true, skips verifying appscode.com cert")
 	fs.StringVar(&s.LicenseDir, "license-dir", s.LicenseDir, "Path to license directory")
 	fs.StringVar(&s.CacheDir, "cache-dir", s.CacheDir, "Path to license cache directory")
 	fs.StringVar(&s.HubKubeconfig, "hub-kubeconfig", s.HubKubeconfig, "Path to hub kubeconfig")
@@ -56,6 +63,14 @@ func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
 func (s *ExtraOptions) ApplyTo(cfg *apiserver.ExtraConfig) error {
 	cfg.BaseURL = s.BaseURL
 	cfg.Token = s.Token
+	if s.CAFile != "" {
+		caCert, err := os.ReadFile(s.CAFile)
+		if err != nil {
+			return errors.Wrapf(err, "failed to read CA file %s", s.CAFile)
+		}
+		cfg.CACert = caCert
+	}
+	cfg.InsecureSkipVerifyTLS = s.InsecureSkipVerifyTLS
 	cfg.LicenseDir = s.LicenseDir
 	cfg.CacheDir = s.CacheDir
 	cfg.HubKubeconfig = s.HubKubeconfig

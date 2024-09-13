@@ -8,7 +8,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.71.2
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/license-verifier v0.14.2-0.20240913064552-791722d3451a
+	go.bytebuilders.dev/license-verifier v0.14.2
 	gocloud.dev v0.26.0
 	gomodules.xyz/blobfs v0.1.14
 	gomodules.xyz/cert v1.6.0
@@ -23,7 +23,7 @@ require (
 	k8s.io/kube-aggregator v0.30.1
 	k8s.io/kube-openapi v0.0.0-20240430033511-f0e62f92d13f
 	k8s.io/utils v0.0.0-20240310230437-4693a0247e57
-	kmodules.xyz/client-go v0.30.9
+	kmodules.xyz/client-go v0.30.14
 	open-cluster-management.io/addon-framework v0.10.0
 	open-cluster-management.io/api v0.14.0
 	sigs.k8s.io/controller-runtime v0.18.4
