@@ -44,7 +44,7 @@ type Client struct {
 	client     *http.Client
 }
 
-func NewClient(baseURL, token, clusterUID string, caCert []byte, insecureSkipTLSVerify bool) (*Client, error) {
+func NewClient(baseURL, token, clusterUID string, caCert []byte, insecureSkipVerifyTLS bool) (*Client, error) {
 	u, err := info.LicenseIssuerAPIEndpoint(baseURL)
 	if err != nil {
 		return nil, err
@@ -55,9 +55,9 @@ func NewClient(baseURL, token, clusterUID string, caCert []byte, insecureSkipTLS
 		clusterUID: clusterUID,
 		client:     http.DefaultClient,
 	}
-	if len(caCert) > 0 || insecureSkipTLSVerify {
+	if len(caCert) > 0 || insecureSkipVerifyTLS {
 		tlsConfig := &tls.Config{
-			InsecureSkipVerify: insecureSkipTLSVerify,
+			InsecureSkipVerify: insecureSkipVerifyTLS,
 		}
 		if len(c.caCert) > 0 {
 			caCertPool := x509.NewCertPool()
