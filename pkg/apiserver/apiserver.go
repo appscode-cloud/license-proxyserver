@@ -186,10 +186,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 	}
 
 	var lc *pc.Client
-	if !isSpokeCluster {
-		if c.ExtraConfig.BaseURL == "" {
-			return nil, fmt.Errorf("missing --baseURL")
-		}
+	if !isSpokeCluster && c.ExtraConfig.BaseURL != "" {
 		if c.ExtraConfig.Token == "" {
 			return nil, fmt.Errorf("missing --token")
 		}
