@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
+	clustermeta "kmodules.xyz/client-go/cluster"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -90,12 +91,14 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 	if !ok {
 		return nil, apierrors.NewBadRequest("missing user info")
 	}
-	req := obj.(*proxyv1alpha1.LicenseRequest)
+	in := obj.(*proxyv1alpha1.LicenseRequest)
 
-	l, err := r.getLicense(req.Request.Features)
+	isSpokeCluster := clustermeta.IsOpenClusterSpoke(r.spokeClient)
+
+	l, err := r.getLicense(in.Request.Features)
 	if err != nil {
 		return nil, err
-	} else if l == nil {
+	} else if l == nil && isSpokeCluster {
 		ca := clusterv1alpha1.ClusterClaim{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: common.ClusterClaimLicense,
@@ -104,7 +107,7 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 		err = r.spokeClient.Get(context.TODO(), client.ObjectKey{Name: ca.Name}, &ca)
 		if err == nil {
 			curFeatures := sets.New[string](strings.Split(ca.Spec.Value, ",")...)
-			reqFeatures := sets.New[string](req.Request.Features...)
+			reqFeatures := sets.New[string](in.Request.Features...)
 
 			extraFeatures := reqFeatures.Difference(curFeatures)
 			if extraFeatures.Len() > 0 {
@@ -117,7 +120,7 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 				}
 			}
 		} else if apierrors.IsNotFound(err) {
-			reqFeatures := req.Request.Features
+			reqFeatures := in.Request.Features
 			sort.Strings(reqFeatures)
 			ca.Spec.Value = strings.Join(reqFeatures, ",")
 			err = r.spokeClient.Create(context.TODO(), &ca)
@@ -129,16 +132,21 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 		}
 
 		// return blank response instead of error
-		req.Response = &proxyv1alpha1.LicenseRequestResponse{}
-		return req, nil
+		in.Response = &proxyv1alpha1.LicenseRequestResponse{}
+		return in, nil
 	}
 
-	r.rb.Record(l.ID, req.Request.Features, user)
-	req.Response = &proxyv1alpha1.LicenseRequestResponse{
-		License: string(l.Data),
+	if l != nil {
+		r.rb.Record(l.ID, in.Request.Features, user)
+		in.Response = &proxyv1alpha1.LicenseRequestResponse{
+			License: string(l.Data),
+		}
+	} else {
+		// return blank response instead of error
+		in.Response = &proxyv1alpha1.LicenseRequestResponse{}
 	}
 
-	return req, nil
+	return in, nil
 }
 
 func (r *Storage) getLicense(features []string) (*v1alpha1.License, error) {

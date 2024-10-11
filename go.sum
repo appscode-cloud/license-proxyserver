@@ -1445,8 +1445,8 @@ k8s.io/kube-openapi v0.0.0-20240430033511-f0e62f92d13f h1:0LQagt0gDpKqvIkAMPaRGc
 k8s.io/kube-openapi v0.0.0-20240430033511-f0e62f92d13f/go.mod h1:S9tOR0FxgyusSNR+MboCuiDpVWkAifZvaYI1Q2ubgro=
 k8s.io/utils v0.0.0-20240310230437-4693a0247e57 h1:gbqbevonBh57eILzModw6mrkbwM0gQBEuevE/AaBsHY=
 k8s.io/utils v0.0.0-20240310230437-4693a0247e57/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
-kmodules.xyz/client-go v0.30.22 h1:xo9vPI+tyK/uHCI3ek8z9eDQerswOPskNEQbBgBpZPw=
-kmodules.xyz/client-go v0.30.22/go.mod h1:CAu+JlA8RVGtj6LQHu0Q1w2mnFUajuti49c7T1AvGdM=
+kmodules.xyz/client-go v0.30.27 h1:pmM11k/XNVGTFp22qRsXBnGRnFeLNGX2lB9I0Gu+JWY=
+kmodules.xyz/client-go v0.30.27/go.mod h1:CAu+JlA8RVGtj6LQHu0Q1w2mnFUajuti49c7T1AvGdM=
 moul.io/http2curl/v2 v2.3.1-0.20221024080105-10c404f653f7 h1:NykkTlRB+X40z86cLHdEmuoTxhNKhQebLT379b1EumA=
 moul.io/http2curl/v2 v2.3.1-0.20221024080105-10c404f653f7/go.mod h1:RW4hyBjTWSYDOxapodpNEtX0g5Eb16sxklBqmd2RHcE=
 nhooyr.io/websocket v1.8.7/go.mod h1:B70DZP8IakI65RVQ51MsWP/8jndNma26DVA/nFSCgW0=
