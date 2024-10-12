@@ -117,12 +117,11 @@ func GetConfigValues(opts *ManagerOptions, cs *certstore.CertStore) addonfactory
 				return nil, err
 			}
 		}
-		if opts.Token != "" {
-			err = unstructured.SetNestedField(vals, common.HubKubeconfigSecretName, "hubKubeconfigSecretName")
-			if err != nil {
-				return nil, err
-			}
+
+		if err = unstructured.SetNestedField(vals, common.HubKubeconfigSecretName, "hubKubeconfigSecretName"); err != nil {
+			return nil, err
 		}
+
 		err = unstructured.SetNestedField(vals, "Always", "imagePullPolicy")
 		if err != nil {
 			return nil, err
