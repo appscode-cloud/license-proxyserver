@@ -17,6 +17,7 @@ limitations under the License.
 package manager
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -26,8 +27,11 @@ import (
 	"github.com/pkg/errors"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"gomodules.xyz/cert/certstore"
+	corev1 "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
@@ -36,6 +40,7 @@ import (
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	workv1 "open-cluster-management.io/api/work/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -49,7 +54,7 @@ func init() {
 	_ = monitoringv1.AddToScheme(scheme)
 }
 
-func GetConfigValues(opts *ManagerOptions, cs *certstore.CertStore) addonfactory.GetValuesFunc {
+func GetConfigValues(kc client.Client, opts *ManagerOptions, cs *certstore.CertStore) addonfactory.GetValuesFunc {
 	return func(cluster *clusterv1.ManagedCluster, addon *v1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
 		caCrtBytes, _, err := cs.ReadBytes(common.CACertName)
 		if err != nil {
@@ -129,6 +134,26 @@ func GetConfigValues(opts *ManagerOptions, cs *certstore.CertStore) addonfactory
 		err = unstructured.SetNestedField(vals, cluster.Name, "clusterName")
 		if err != nil {
 			return nil, err
+		}
+
+		var sec corev1.Secret
+		err = kc.Get(context.Background(), types.NamespacedName{Name: common.LicenseSecret, Namespace: cluster.Name}, &sec)
+		if err != nil && kerr.IsNotFound(err) {
+			return vals, nil
+		} else if err != nil {
+			return nil, err
+		}
+
+		if sec.Data != nil {
+			licenses := make(map[string]interface{})
+			for key, value := range sec.Data {
+				licenses[key] = string(value)
+			}
+
+			err = unstructured.SetNestedMap(vals, licenses, "licenses")
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		return vals, nil

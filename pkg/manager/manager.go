@@ -142,7 +142,7 @@ func runManagerController(ctx context.Context, cfg *rest.Config, opts *ManagerOp
 	}
 	agent, err := addonfactory.NewAgentAddonFactory(common.AddonName, FS, common.AgentManifestsDir).
 		WithScheme(scheme).
-		WithGetValuesFuncs(GetConfigValues(opts, cs)).
+		WithGetValuesFuncs(GetConfigValues(hubManager.GetClient(), opts, cs)).
 		WithAgentRegistrationOption(registrationOption).
 		WithAgentHealthProber(agentHealthProber()).
 		WithAgentInstallNamespace(func(addon *v1alpha1.ManagedClusterAddOn) (string, error) {
