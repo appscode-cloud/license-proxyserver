@@ -46,7 +46,7 @@ type LicenseSyncer struct {
 
 func (r *LicenseSyncer) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.Info("Start reconciling")
+	logger.Info("Start reconciling !")
 
 	// get hub cluster licenses secret
 	src := core.Secret{}
