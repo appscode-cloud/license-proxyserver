@@ -66,9 +66,9 @@ BIN_PLATFORMS    := $(DOCKER_PLATFORMS)
 OS   := $(if $(GOOS),$(GOOS),$(shell go env GOOS))
 ARCH := $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))
 
-# BASEIMAGE_PROD   ?= gcr.io/distroless/static-debian11
+# BASEIMAGE_PROD   ?= gcr.io/distroless/static-debian12
 BASEIMAGE_PROD   ?= alpine
-BASEIMAGE_DBG    ?= debian:bookworm
+BASEIMAGE_DBG    ?= debian:12
 
 IMAGE            := $(REGISTRY)/$(BIN)
 VERSION_PROD     := $(VERSION)
