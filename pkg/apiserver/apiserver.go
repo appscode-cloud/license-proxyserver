@@ -33,6 +33,7 @@ import (
 	pc "go.bytebuilders.dev/license-verifier/client"
 	"go.bytebuilders.dev/license-verifier/info"
 
+	v "gomodules.xyz/x/version"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -190,7 +191,12 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		if c.ExtraConfig.Token == "" {
 			return nil, fmt.Errorf("missing --token")
 		}
-		lc, err = licenseclient.NewClient(c.ExtraConfig.BaseURL, c.ExtraConfig.Token, cid, c.ExtraConfig.CACert, c.ExtraConfig.InsecureSkipTLSVerify)
+		lc, err = licenseclient.NewClient(
+			c.ExtraConfig.BaseURL,
+			c.ExtraConfig.Token, cid,
+			c.ExtraConfig.CACert,
+			c.ExtraConfig.InsecureSkipTLSVerify,
+			fmt.Sprintf("license-proxyserver/%s", v.Version.Version))
 		if err != nil {
 			return nil, err
 		}

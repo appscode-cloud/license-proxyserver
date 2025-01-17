@@ -18,6 +18,7 @@ package manager
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,6 +31,7 @@ import (
 	pc "go.bytebuilders.dev/license-verifier/client"
 	"go.bytebuilders.dev/license-verifier/info"
 
+	v "gomodules.xyz/x/version"
 	core "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -154,7 +156,7 @@ func (r *LicenseAcquirer) reconcile(ctx context.Context, clusterName, cid string
 func (r *LicenseAcquirer) getNewLicense(ctx context.Context, cid string, features []string) (*v1alpha1.License, *v1alpha1.Contract, error) {
 	logger := log.FromContext(ctx)
 
-	lc, err := pc.NewClient(r.BaseURL, r.Token, cid, r.CaCert, r.InsecureSkipTLSVerify)
+	lc, err := pc.NewClient(r.BaseURL, r.Token, cid, r.CaCert, r.InsecureSkipTLSVerify, fmt.Sprintf("license-proxyserver-manager/%s", v.Version.Version))
 	if err != nil {
 		return nil, nil, err
 	}
