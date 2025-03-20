@@ -10,7 +10,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.81.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
-	go.bytebuilders.dev/license-verifier v0.14.6
+	go.bytebuilders.dev/license-verifier v0.14.7
 	gocloud.dev v0.40.0
 	gomodules.xyz/blobfs v0.2.2
 	gomodules.xyz/cert v1.6.0

@@ -18,6 +18,8 @@ package manager
 
 import (
 	"context"
+	"crypto/x509"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -35,6 +37,8 @@ import (
 	core "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/klog/v2"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -129,6 +133,8 @@ func (r *LicenseAcquirer) reconcile(ctx context.Context, clusterName, cid string
 		return err
 	}
 
+	var errList []error
+
 	reg, err := r.getLicenseRegistry(cid)
 	if err != nil {
 		return err
@@ -138,19 +144,28 @@ func (r *LicenseAcquirer) reconcile(ctx context.Context, clusterName, cid string
 		if !found {
 			var c *v1alpha1.Contract
 			l, c, err = r.getNewLicense(ctx, cid, []string{feature})
-			if err != nil {
-				return err
+			if err == nil {
+				reg.Add(l, c)
+			} else {
+				klog.ErrorS(err, "failed to get new license", "feature", feature)
+				var ce *x509.CertificateInvalidError
+				if !errors.As(err, &ce) {
+					errList = append(errList, err)
+				}
 			}
-			reg.Add(l, c)
 		}
-		sec.Data[l.PlanName] = l.Data
+		if l != nil && l.Status == v1alpha1.LicenseActive {
+			sec.Data[l.PlanName] = l.Data
+		}
 	}
 
 	if secretExists {
-		return r.Update(context.TODO(), &sec)
+		errList = append(errList, r.Update(context.TODO(), &sec))
 	} else {
-		return r.Create(context.TODO(), &sec)
+		errList = append(errList, r.Create(context.TODO(), &sec))
 	}
+
+	return utilerrors.NewAggregate(errList)
 }
 
 func (r *LicenseAcquirer) getNewLicense(ctx context.Context, cid string, features []string) (*v1alpha1.License, *v1alpha1.Contract, error) {
