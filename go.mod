@@ -13,6 +13,7 @@ require (
 	gomodules.xyz/blobfs v0.1.14
 	gomodules.xyz/cert v1.6.0
 	gomodules.xyz/logs v0.0.7
+	gomodules.xyz/oneliners v0.0.1
 	gomodules.xyz/x v0.0.17
 	k8s.io/api v0.30.2
 	k8s.io/apimachinery v0.30.2
