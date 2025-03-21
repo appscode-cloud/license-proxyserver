@@ -21,6 +21,7 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"time"
 
 	"go.bytebuilders.dev/license-proxyserver/pkg/common"
 	"go.bytebuilders.dev/license-proxyserver/pkg/manager/rbac"
@@ -42,6 +43,7 @@ import (
 	cmdfactory "open-cluster-management.io/addon-framework/pkg/cmd/factory"
 	"open-cluster-management.io/api/addon/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -78,6 +80,7 @@ func NewManagerCommand() *cobra.Command {
 
 func runManagerController(ctx context.Context, cfg *rest.Config, opts *ManagerOptions) error {
 	log.SetLogger(klog.NewKlogr())
+	resyncPeriod := 1 * time.Hour
 
 	hubManager, err := ctrl.NewManager(cfg, manager.Options{
 		Scheme:                 scheme,
@@ -86,6 +89,9 @@ func runManagerController(ctx context.Context, cfg *rest.Config, opts *ManagerOp
 		LeaderElection:         false,
 		LeaderElectionID:       "5b87adeb.mager.licenses.appscode.com",
 		NewClient:              cu.NewClient,
+		Cache: cache.Options{
+			SyncPeriod: &resyncPeriod,
+		},
 	})
 	if err != nil {
 		return err
