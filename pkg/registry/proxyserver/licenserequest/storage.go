@@ -143,6 +143,7 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 		}
 	} else {
 		// return blank response instead of error
+		// typically license mounted via secret has expired
 		in.Response = &proxyv1alpha1.LicenseRequestResponse{}
 	}
 

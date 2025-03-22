@@ -113,7 +113,7 @@ func (r *LicenseRegistry) LicenseForFeature(feature string) (*v1alpha1.License, 
 	for q.Len() > 0 {
 		// ref: https://stackoverflow.com/a/63328950
 		item := q[0]
-		if now.After(item.NotAfter.Time) {
+		if item.NotAfter.Time.After(now) {
 			heap.Pop(&q)
 			r.reg[feature] = q
 			r.removeFromStore(item)
