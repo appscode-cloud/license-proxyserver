@@ -26,8 +26,8 @@ require (
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 	kmodules.xyz/client-go v0.32.1
-	open-cluster-management.io/addon-framework v0.12.0
-	open-cluster-management.io/api v0.16.1
+	open-cluster-management.io/addon-framework v0.11.0
+	open-cluster-management.io/api v0.15.0
 	sigs.k8s.io/controller-runtime v0.20.3
 	sigs.k8s.io/yaml v1.4.0
 )
@@ -194,7 +194,7 @@ require (
 	k8s.io/cli-runtime v0.32.2 // indirect
 	k8s.io/kms v0.32.3 // indirect
 	moul.io/http2curl/v2 v2.3.1-0.20221024080105-10c404f653f7 // indirect
-	open-cluster-management.io/sdk-go v0.16.0 // indirect
+	open-cluster-management.io/sdk-go v0.15.0 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.0 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/kustomize/api v0.18.0 // indirect

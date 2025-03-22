@@ -76,8 +76,6 @@ func NewAddonDeployController(
 		agentAddons:                agentAddons,
 	}
 
-	c.setClusterInformerHandler(clusterInformers)
-
 	f := factory.New().WithSyncContext(syncCtx).
 		WithFilteredEventsInformersQueueKeysFunc(
 			func(obj runtime.Object) []string {
@@ -128,13 +126,15 @@ func NewAddonDeployController(
 			},
 			workInformers.Informer(),
 		).
-		WithBareInformers(clusterInformers.Informer()).
 		WithSync(c.sync)
 
+	if c.watchManagedCluster(clusterInformers) {
+		f.WithBareInformers(clusterInformers.Informer())
+	}
 	return f.ToController(controllerName)
 }
 
-func (c addonDeployController) setClusterInformerHandler(clusterInformers clusterinformers.ManagedClusterInformer) {
+func (c addonDeployController) watchManagedCluster(clusterInformers clusterinformers.ManagedClusterInformer) bool {
 	var filters []func(old, new *clusterv1.ManagedCluster) bool
 	for _, addon := range c.agentAddons {
 		if addon.GetAgentAddonOptions().AgentDeployTriggerClusterFilter != nil {
@@ -142,7 +142,7 @@ func (c addonDeployController) setClusterInformerHandler(clusterInformers cluste
 		}
 	}
 	if len(filters) == 0 {
-		return
+		return false
 	}
 
 	_, err := clusterInformers.Informer().AddEventHandler(
@@ -169,8 +169,8 @@ func (c addonDeployController) setClusterInformerHandler(clusterInformers cluste
 	if err != nil {
 		utilruntime.HandleError(err)
 	}
+	return true
 }
-
 func (c *addonDeployController) enqueueAddOnsByCluster() func(obj interface{}) {
 	return func(obj interface{}) {
 		accessor, _ := meta.Accessor(obj)

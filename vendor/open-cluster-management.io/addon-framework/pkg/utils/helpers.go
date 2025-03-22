@@ -296,15 +296,37 @@ func ManagedByAddonManager(obj interface{}) bool {
 	accessor, _ := meta.Accessor(obj)
 	annotations := accessor.GetAnnotations()
 	if len(annotations) == 0 {
-		return true
+		return false
 	}
 
 	value, ok := annotations[addonapiv1alpha1.AddonLifecycleAnnotationKey]
 	if !ok {
-		return true
+		return false
 	}
 
 	return value == addonapiv1alpha1.AddonLifecycleAddonManagerAnnotationValue
+}
+
+func ManagedBySelf(agentAddons map[string]agent.AgentAddon) func(obj interface{}) bool {
+	return func(obj interface{}) bool {
+		accessor, _ := meta.Accessor(obj)
+		if _, ok := agentAddons[accessor.GetName()]; !ok {
+			return false
+		}
+
+		annotations := accessor.GetAnnotations()
+
+		if len(annotations) == 0 {
+			return true
+		}
+
+		value, ok := annotations[addonapiv1alpha1.AddonLifecycleAnnotationKey]
+		if !ok {
+			return true
+		}
+
+		return value == addonapiv1alpha1.AddonLifecycleSelfManageAnnotationValue
+	}
 }
 
 func FilterByAddonName(agentAddons map[string]agent.AgentAddon) func(obj interface{}) bool {

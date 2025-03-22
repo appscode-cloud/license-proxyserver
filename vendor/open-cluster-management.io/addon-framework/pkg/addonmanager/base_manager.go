@@ -178,8 +178,7 @@ func (a *BaseAddonManagerImpl) StartWithInformers(ctx context.Context,
 		)
 	}
 
-	a.syncContexts = append(a.syncContexts,
-		deployController.SyncContext(), registrationController.SyncContext())
+	a.syncContexts = append(a.syncContexts, deployController.SyncContext())
 
 	go deployController.Run(ctx, 1)
 	go registrationController.Run(ctx, 1)

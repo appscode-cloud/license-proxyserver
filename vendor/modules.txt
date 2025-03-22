@@ -1689,7 +1689,7 @@ kmodules.xyz/client-go/tools/clientcmd
 # moul.io/http2curl/v2 v2.3.1-0.20221024080105-10c404f653f7
 ## explicit; go 1.13
 moul.io/http2curl/v2
-# open-cluster-management.io/addon-framework v0.12.0
+# open-cluster-management.io/addon-framework v0.11.0
 ## explicit; go 1.22.0
 open-cluster-management.io/addon-framework/pkg/addonfactory
 open-cluster-management.io/addon-framework/pkg/addonmanager
@@ -1705,7 +1705,7 @@ open-cluster-management.io/addon-framework/pkg/assets
 open-cluster-management.io/addon-framework/pkg/cmd/factory
 open-cluster-management.io/addon-framework/pkg/index
 open-cluster-management.io/addon-framework/pkg/utils
-# open-cluster-management.io/api v0.16.1
+# open-cluster-management.io/api v0.15.0
 ## explicit; go 1.22.0
 open-cluster-management.io/api/addon/v1alpha1
 open-cluster-management.io/api/client/addon/clientset/versioned
@@ -1751,7 +1751,7 @@ open-cluster-management.io/api/cluster/v1beta2
 open-cluster-management.io/api/utils/work/v1/workapplier
 open-cluster-management.io/api/work/v1
 open-cluster-management.io/api/work/v1alpha1
-# open-cluster-management.io/sdk-go v0.16.0
+# open-cluster-management.io/sdk-go v0.15.0
 ## explicit; go 1.22.0
 open-cluster-management.io/sdk-go/pkg/apis/work/v1/applier
 open-cluster-management.io/sdk-go/pkg/apis/work/v1/builder

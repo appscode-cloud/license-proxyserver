@@ -109,8 +109,6 @@ func NewCSRApprovingController(
 				return true
 			},
 			csrInformer).
-		// clusterLister and addonLister are used, so wait for cache sync
-		WithBareInformers(clusterInformers.Informer(), addonInformers.Informer()).
 		WithSync(c.sync).
 		ToController("CSRApprovingController")
 }
