@@ -327,6 +327,8 @@ github.com/klauspost/compress v1.17.11 h1:In6xLpyWOi1+C7tXUUWv2ot1QvBjxevKAaI6IX
 github.com/klauspost/compress v1.17.11/go.mod h1:pMDklpSncoRMuLFrf1W9Ss9KT+0rH90U12bZKk7uwG0=
 github.com/klauspost/cpuid/v2 v2.0.9 h1:lgaqFMSdTdQYdZ04uHyN2d/eKdOMyi2YLSvlQIBFYa4=
 github.com/klauspost/cpuid/v2 v2.0.9/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=
+github.com/kluster-manager/addon-framework v0.11.1-0.20250322021821-7a7c58695794 h1:8O9753SaHPOzfQeCsiDYgQEQbvwC7zFLpSdbbVvYJxQ=
+github.com/kluster-manager/addon-framework v0.11.1-0.20250322021821-7a7c58695794/go.mod h1:8toPri9wrPYG0OOR8OIdtGnvcQ8MKVxciJ39GSSHpKo=
 github.com/kmodules/apiserver v0.32.3-0.20250221062720-35dc674c7dd6 h1:U6BBc6uBT3jTlmTBTyXaIfNnp1WzUaX6Xz7ReV8qcaw=
 github.com/kmodules/apiserver v0.32.3-0.20250221062720-35dc674c7dd6/go.mod h1:PEwREHiHNU2oFdte7BjzA1ZyjWjuckORLIK/wLV5goM=
 github.com/kmodules/controller-runtime v0.20.3-0.20250221050548-8eabe54e7dda h1:sCYJ4MiAYXHjUT6mJSRPaCPbHosjHjyrdNita/ZFQLk=
@@ -873,8 +875,6 @@ kmodules.xyz/client-go v0.32.1 h1:W8TWGBBaokQEqfesbdhlRFMMV0TChcRbMRQ0eTIRS88=
 kmodules.xyz/client-go v0.32.1/go.mod h1:tqe40/iDtO/RSNaDJs/a+rgnMPSOcK622HpOmOFvcds=
 moul.io/http2curl/v2 v2.3.1-0.20221024080105-10c404f653f7 h1:NykkTlRB+X40z86cLHdEmuoTxhNKhQebLT379b1EumA=
 moul.io/http2curl/v2 v2.3.1-0.20221024080105-10c404f653f7/go.mod h1:RW4hyBjTWSYDOxapodpNEtX0g5Eb16sxklBqmd2RHcE=
-open-cluster-management.io/addon-framework v0.11.0 h1:ZJxphgHQ36VUJF0RIag+nzcEn5PNyep2rsEPdz6wT7o=
-open-cluster-management.io/addon-framework v0.11.0/go.mod h1:ruMU8i/dciz3qCv2CQ46Cu1b7rkK7TpvB+W4bRwHf+I=
 open-cluster-management.io/api v0.15.0 h1:lRee1KOlGHZb2scTA7ff9E9Fxt2hJc7jpkHnaCbvkOU=
 open-cluster-management.io/api v0.15.0/go.mod h1:9erZEWEn4bEqh0nIX2wA7f/s3KCuFycQdBrPrRzi0QM=
 open-cluster-management.io/sdk-go v0.15.0 h1:2IAJnPfUoY6rPC5w7LhqAnvIlgekPoVW03LdZO1unIM=

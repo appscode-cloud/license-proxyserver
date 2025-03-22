@@ -1689,8 +1689,8 @@ kmodules.xyz/client-go/tools/clientcmd
 # moul.io/http2curl/v2 v2.3.1-0.20221024080105-10c404f653f7
 ## explicit; go 1.13
 moul.io/http2curl/v2
-# open-cluster-management.io/addon-framework v0.11.0
-## explicit; go 1.22.0
+# open-cluster-management.io/addon-framework v0.11.0 => github.com/kluster-manager/addon-framework v0.11.1-0.20250322021821-7a7c58695794
+## explicit; go 1.23.0
 open-cluster-management.io/addon-framework/pkg/addonfactory
 open-cluster-management.io/addon-framework/pkg/addonmanager
 open-cluster-management.io/addon-framework/pkg/addonmanager/constants
@@ -1910,3 +1910,4 @@ sigs.k8s.io/yaml/goyaml.v3
 # sigs.k8s.io/controller-runtime => github.com/kmodules/controller-runtime v0.20.3-0.20250221050548-8eabe54e7dda
 # github.com/imdario/mergo => github.com/imdario/mergo v0.3.6
 # k8s.io/apiserver => github.com/kmodules/apiserver v0.32.3-0.20250221062720-35dc674c7dd6
+# open-cluster-management.io/addon-framework => github.com/kluster-manager/addon-framework v0.11.1-0.20250322021821-7a7c58695794

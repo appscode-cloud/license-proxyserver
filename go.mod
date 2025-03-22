@@ -210,3 +210,5 @@ replace sigs.k8s.io/controller-runtime => github.com/kmodules/controller-runtime
 replace github.com/imdario/mergo => github.com/imdario/mergo v0.3.6
 
 replace k8s.io/apiserver => github.com/kmodules/apiserver v0.32.3-0.20250221062720-35dc674c7dd6
+
+replace open-cluster-management.io/addon-framework => github.com/kluster-manager/addon-framework v0.11.1-0.20250322021821-7a7c58695794

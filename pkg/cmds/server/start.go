@@ -96,6 +96,7 @@ func (o *LicenseProxyServerOptions) Config() (*apiserver.Config, error) {
 	}
 
 	serverConfig := genericapiserver.NewRecommendedConfig(apiserver.Codecs)
+	serverConfig.EffectiveVersion = utilversion.NewEffectiveVersion("v1.0.0")
 	if err := o.RecommendedOptions.ApplyTo(serverConfig); err != nil {
 		return nil, err
 	}
@@ -108,7 +109,6 @@ func (o *LicenseProxyServerOptions) Config() (*apiserver.Config, error) {
 		fmt.Sprintf("/apis/%s/%s", proxyv1alpha1.SchemeGroupVersion, proxyv1alpha1.ResourceLicenseStatuses),
 	}
 
-	serverConfig.EffectiveVersion = utilversion.NewEffectiveVersion("v1.0.0")
 	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(
 		ou.GetDefinitions(
 			proxyv1alpha1.GetOpenAPIDefinitions,
