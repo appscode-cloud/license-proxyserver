@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"go.bytebuilders.dev/license-proxyserver/pkg/common"
 	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
@@ -42,9 +43,10 @@ import (
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+const ttl = storage.LicenseAcquisitionBuffer + storage.MinRemainingLife
 
 type LicenseAcquirer struct {
 	client.Client
@@ -68,9 +70,6 @@ func (r *LicenseAcquirer) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *LicenseAcquirer) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	logger := log.FromContext(ctx)
-	logger.Info("Start reconciling")
-
 	managedCluster := &clusterv1.ManagedCluster{}
 	err := r.Get(ctx, request.NamespacedName, managedCluster)
 	if err != nil {
@@ -88,10 +87,7 @@ func (r *LicenseAcquirer) Reconcile(ctx context.Context, request reconcile.Reque
 		}
 	}
 	if cid != "" && len(features) > 0 {
-		err = r.reconcile(ctx, managedCluster.Name, cid, features)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
+		return r.reconcile(managedCluster.Name, cid, features)
 	}
 
 	return reconcile.Result{}, nil
@@ -111,12 +107,14 @@ func (r *LicenseAcquirer) getLicenseRegistry(cid string) (*storage.LicenseRegist
 	if err != nil {
 		return nil, err
 	}
-	reg = storage.NewLicenseRegistry(dir, nil)
+	reg = storage.NewLicenseRegistry(dir, ttl, nil)
 	r.LicenseCache[cid] = reg
 	return reg, nil
 }
 
-func (r *LicenseAcquirer) reconcile(ctx context.Context, clusterName, cid string, features []string) error {
+func (r *LicenseAcquirer) reconcile(clusterName, cid string, features []string) (reconcile.Result, error) {
+	klog.InfoS("refreshing license", "clusterName", clusterName, "clusterUID", cid)
+
 	sec := core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      common.LicenseSecret,
@@ -130,21 +128,31 @@ func (r *LicenseAcquirer) reconcile(ctx context.Context, clusterName, cid string
 	} else if apierrors.IsNotFound(err) {
 		sec.Data = map[string][]byte{}
 	} else {
-		return err
+		return reconcile.Result{}, err
 	}
 
 	var errList []error
+	var earliestExpired time.Time
 
 	reg, err := r.getLicenseRegistry(cid)
 	if err != nil {
-		return err
+		return reconcile.Result{}, err
 	}
 	for _, feature := range features {
 		l, found := reg.LicenseForFeature(feature)
 		if !found {
 			var c *v1alpha1.Contract
-			l, c, err = r.getNewLicense(ctx, cid, []string{feature})
+			l, c, err = r.getNewLicense(cid, []string{feature})
 			if err == nil {
+
+				klog.InfoS("acquired new license",
+					"clusterName", clusterName,
+					"clusterUID", cid,
+					"licenseID", l.ID,
+					"product", l.ProductLine,
+					"plan", l.PlanName,
+					"expiry", l.NotAfter.UTC().Format(time.RFC822),
+				)
 				reg.Add(l, c)
 			} else {
 				klog.ErrorS(err, "failed to get new license", "feature", feature)
@@ -156,6 +164,9 @@ func (r *LicenseAcquirer) reconcile(ctx context.Context, clusterName, cid string
 		}
 		if l != nil && l.Status == v1alpha1.LicenseActive {
 			sec.Data[l.PlanName] = l.Data
+			if earliestExpired.IsZero() || earliestExpired.After(l.NotAfter.Time) {
+				earliestExpired = l.NotAfter.Time
+			}
 		}
 	}
 
@@ -165,12 +176,15 @@ func (r *LicenseAcquirer) reconcile(ctx context.Context, clusterName, cid string
 		errList = append(errList, r.Create(context.TODO(), &sec))
 	}
 
-	return utilerrors.NewAggregate(errList)
+	if !earliestExpired.IsZero() {
+		return reconcile.Result{
+			RequeueAfter: time.Until(earliestExpired.Add(-ttl)),
+		}, utilerrors.NewAggregate(errList)
+	}
+	return reconcile.Result{}, utilerrors.NewAggregate(errList)
 }
 
-func (r *LicenseAcquirer) getNewLicense(ctx context.Context, cid string, features []string) (*v1alpha1.License, *v1alpha1.Contract, error) {
-	logger := log.FromContext(ctx)
-
+func (r *LicenseAcquirer) getNewLicense(cid string, features []string) (*v1alpha1.License, *v1alpha1.Contract, error) {
 	lc, err := pc.NewClient(r.BaseURL, r.Token, cid, r.CaCert, r.InsecureSkipTLSVerify, fmt.Sprintf("license-proxyserver-manager/%s", v.Version.Version))
 	if err != nil {
 		return nil, nil, err
@@ -180,7 +194,6 @@ func (r *LicenseAcquirer) getNewLicense(ctx context.Context, cid string, feature
 	if err != nil {
 		return nil, nil, err
 	}
-	logger.Info("acquired new license", "cid", cid, "features", strings.Join(features, ","))
 
 	caData, err := info.LoadLicenseCA()
 	if err != nil {
@@ -199,6 +212,5 @@ func (r *LicenseAcquirer) getNewLicense(ctx context.Context, cid string, feature
 	if err != nil {
 		return nil, nil, err
 	}
-
 	return &l, con, nil
 }

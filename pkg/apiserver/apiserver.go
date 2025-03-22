@@ -197,7 +197,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 	}
 
 	rb := storage.NewRecordBook()
-	reg := storage.NewLicenseRegistry(c.ExtraConfig.CacheDir, rb)
+	reg := storage.NewLicenseRegistry(c.ExtraConfig.CacheDir, storage.MinRemainingLife, rb)
 	if c.ExtraConfig.LicenseDir != "" {
 		err = storage.LoadDir(cid, c.ExtraConfig.LicenseDir, reg)
 		if err != nil {

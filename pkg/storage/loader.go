@@ -19,6 +19,7 @@ package storage
 import (
 	"os"
 	"path/filepath"
+	"time"
 
 	verifier "go.bytebuilders.dev/license-verifier"
 	"go.bytebuilders.dev/license-verifier/info"
@@ -68,7 +69,14 @@ func LoadDir(cid, dir string, reg *LicenseRegistry) error {
 		if err != nil {
 			klog.ErrorS(err, "Skipping", "file", filename)
 			continue
-		} else {
+		} else if time.Until(license.NotAfter.Time) >= MinRemainingLife {
+			klog.InfoS("adding license",
+				"dir", dir,
+				"licenseID", license.ID,
+				"product", license.ProductLine,
+				"plan", license.PlanName,
+				"expiry", license.NotAfter.UTC().Format(time.RFC822),
+			)
 			reg.Add(&license, nil)
 		}
 	}

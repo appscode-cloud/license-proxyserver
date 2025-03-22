@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/x509"
 	"fmt"
+	"time"
 
 	"go.bytebuilders.dev/license-proxyserver/pkg/common"
 	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
@@ -27,6 +28,7 @@ import (
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 	kutil "kmodules.xyz/client-go"
 	cu "kmodules.xyz/client-go/client"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -100,6 +102,15 @@ func (r *LicenseSyncer) addLicense(data []byte) error {
 	if err != nil {
 		return err
 	}
-	r.R.Add(&license, nil)
+
+	if time.Until(license.NotAfter.Time) >= storage.MinRemainingLife {
+		klog.InfoS("adding license",
+			"licenseID", license.ID,
+			"product", license.ProductLine,
+			"plan", license.PlanName,
+			"expiry", license.NotAfter.UTC().Format(time.RFC822),
+		)
+		r.R.Add(&license, nil)
+	}
 	return nil
 }

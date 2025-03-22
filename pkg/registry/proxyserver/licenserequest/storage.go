@@ -21,6 +21,7 @@ import (
 	"crypto/x509"
 	"sort"
 	"strings"
+	"time"
 
 	proxyv1alpha1 "go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
 	"go.bytebuilders.dev/license-proxyserver/pkg/common"
@@ -36,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
+	"k8s.io/klog/v2"
 	clustermeta "kmodules.xyz/client-go/cluster"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -143,6 +145,7 @@ func (r *Storage) Create(ctx context.Context, obj runtime.Object, _ rest.Validat
 		}
 	} else {
 		// return blank response instead of error
+		// typically license mounted via secret has expired
 		in.Response = &proxyv1alpha1.LicenseRequestResponse{}
 	}
 
@@ -172,6 +175,13 @@ func (r *Storage) getLicense(features []string) (*v1alpha1.License, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	klog.InfoS("adding license",
+		"licenseID", l.ID,
+		"product", l.ProductLine,
+		"plan", l.PlanName,
+		"expiry", l.NotAfter.UTC().Format(time.RFC822),
+	)
 	r.reg.Add(&l, c)
 	return &l, nil
 }

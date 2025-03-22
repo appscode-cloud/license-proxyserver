@@ -25,9 +25,14 @@ import (
 	"time"
 
 	"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
+
+	"k8s.io/klog/v2"
 )
 
-const minRemainingLife = 10 * time.Minute
+const (
+	LicenseAcquisitionBuffer = 5 * time.Second
+	MinRemainingLife         = 5 * time.Minute
+)
 
 // A LicenseQueue implements heap.Interface and holds Items.
 type LicenseQueue []*v1alpha1.License
@@ -67,11 +72,13 @@ type LicenseRegistry struct {
 	store    map[string]*Record      // serial # -> Record
 	rb       *RecordBook
 	cacheDir string
+	ttl      time.Duration
 }
 
-func NewLicenseRegistry(cacheDir string, rb *RecordBook) *LicenseRegistry {
+func NewLicenseRegistry(cacheDir string, ttl time.Duration, rb *RecordBook) *LicenseRegistry {
 	return &LicenseRegistry{
 		cacheDir: cacheDir,
+		ttl:      ttl,
 		reg:      make(map[string]LicenseQueue),
 		store:    make(map[string]*Record),
 		rb:       rb,
@@ -109,13 +116,19 @@ func (r *LicenseRegistry) LicenseForFeature(feature string) (*v1alpha1.License, 
 	if !ok {
 		return nil, false
 	}
-	now := time.Now().Add(minRemainingLife)
 	for q.Len() > 0 {
 		// ref: https://stackoverflow.com/a/63328950
 		item := q[0]
-		if now.After(item.NotAfter.Time) {
+		if time.Until(item.NotAfter.Time) < r.ttl {
 			heap.Pop(&q)
 			r.reg[feature] = q
+
+			klog.InfoS("removing license",
+				"licenseID", item.ID,
+				"product", item.ProductLine,
+				"plan", item.PlanName,
+				"expiry", item.NotAfter.UTC().Format(time.RFC822),
+			)
 			r.removeFromStore(item)
 		} else {
 			return item, true
@@ -153,7 +166,7 @@ func (r *LicenseRegistry) List() []*Record {
 	r.m.Lock()
 	defer r.m.Unlock()
 
-	now := time.Now().Add(minRemainingLife)
+	now := time.Now().Add(r.ttl)
 	out := make([]*Record, 0, len(r.store))
 	for _, rec := range r.store {
 		if rec.License.NotAfter.After(now) {
