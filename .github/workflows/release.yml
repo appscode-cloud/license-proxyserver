@@ -11,6 +11,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write  # Grants write access to repository contents, including releases
+
 jobs:
   build:
     name: Build
@@ -43,7 +46,16 @@ jobs:
           make release
 
       - name: Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            const tag = context.ref.replace('refs/tags/', '');
+            await github.rest.repos.createRelease({
+              owner,
+              repo,
+              tag_name: tag,
+              generate_release_notes: true,
+            });
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
