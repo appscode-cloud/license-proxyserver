@@ -164,7 +164,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		os.Exit(1)
 	}
 
-	isSpokeCluster := clustermeta.IsOpenClusterSpoke(spokeManager.GetAPIReader())
+	isSpokeCluster := clustermeta.IsACEManagedSpoke(spokeManager.GetAPIReader())
 
 	cid, err := clustermeta.ClusterUID(spokeManager.GetAPIReader())
 	if err != nil {
