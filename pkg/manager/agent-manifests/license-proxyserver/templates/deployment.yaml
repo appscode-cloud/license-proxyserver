@@ -145,8 +145,8 @@ spec:
           defaultMode: 420
           secretName: {{ include "license-proxyserver.fullname" . }}-platform-auth
       {{- end }}
-      securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+{{/*      securityContext:*/}}
+{{/*        {{- toYaml .Values.podSecurityContext | nindent 8 }}*/}}
     {{- if or .Values.tolerations $criticalAddon }}
       tolerations:
       {{- with .Values.tolerations }}
