@@ -21,6 +21,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"slices"
 
 	"go.bytebuilders.dev/license-proxyserver/pkg/common"
 
@@ -34,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
 	agentapi "open-cluster-management.io/addon-framework/pkg/agent"
 	"open-cluster-management.io/api/addon/v1alpha1"
@@ -153,6 +155,20 @@ func GetConfigValues(kc client.Client, opts *ManagerOptions, cs *certstore.CertS
 			err = unstructured.SetNestedMap(vals, licenses, "licenses")
 			if err != nil {
 				return nil, err
+			}
+		}
+
+		for _, cc := range cluster.Status.ClusterClaims {
+			if cc.Name == kmapi.ClusterClaimKeyInfo {
+				var info kmapi.ClusterInfo
+				if err := yaml.Unmarshal([]byte(cc.Value), &info); err != nil {
+					return nil, err
+				}
+				if slices.Contains(info.ClusterManagers, kmapi.ClusterManagerOpenShift.Name()) {
+					unstructured.RemoveNestedField(values, "image", "securityContext", "runAsUser")
+					unstructured.RemoveNestedField(values, "podSecurityContext", "fsGroup")
+				}
+				break
 			}
 		}
 
