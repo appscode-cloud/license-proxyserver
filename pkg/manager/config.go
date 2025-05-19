@@ -160,13 +160,17 @@ func GetConfigValues(kc client.Client, opts *ManagerOptions, cs *certstore.CertS
 
 		for _, cc := range cluster.Status.ClusterClaims {
 			if cc.Name == kmapi.ClusterClaimKeyInfo {
-				var info kmapi.ClusterInfo
+				var info kmapi.ClusterClaimInfo
 				if err := yaml.Unmarshal([]byte(cc.Value), &info); err != nil {
 					return nil, err
 				}
-				if slices.Contains(info.ClusterManagers, kmapi.ClusterManagerOpenShift.Name()) {
-					unstructured.RemoveNestedField(values, "image", "securityContext", "runAsUser")
-					unstructured.RemoveNestedField(values, "podSecurityContext", "fsGroup")
+				if slices.Contains(info.ClusterMetadata.ClusterManagers, kmapi.ClusterManagerOpenShift.Name()) {
+					if err := unstructured.SetNestedField(values, nil, "image", "securityContext", "runAsUser"); err != nil {
+						return nil, err
+					}
+					if err := unstructured.SetNestedField(values, nil, "podSecurityContext", "fsGroup"); err != nil {
+						return nil, err
+					}
 				}
 				break
 			}
