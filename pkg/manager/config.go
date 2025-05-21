@@ -138,6 +138,24 @@ func GetConfigValues(kc client.Client, opts *ManagerOptions, cs *certstore.CertS
 			return nil, err
 		}
 
+		for _, cc := range cluster.Status.ClusterClaims {
+			if cc.Name == kmapi.ClusterClaimKeyInfo {
+				var info kmapi.ClusterClaimInfo
+				if err := yaml.Unmarshal([]byte(cc.Value), &info); err != nil {
+					return nil, err
+				}
+				if slices.Contains(info.ClusterMetadata.ClusterManagers, kmapi.ClusterManagerOpenShift.Name()) {
+					if err := unstructured.SetNestedField(vals, nil, "image", "securityContext", "runAsUser"); err != nil {
+						return nil, err
+					}
+					if err := unstructured.SetNestedField(vals, nil, "podSecurityContext", "fsGroup"); err != nil {
+						return nil, err
+					}
+				}
+				break
+			}
+		}
+
 		var sec corev1.Secret
 		err = kc.Get(context.Background(), types.NamespacedName{Name: common.LicenseSecret, Namespace: cluster.Name}, &sec)
 		if err != nil && kerr.IsNotFound(err) {
@@ -155,24 +173,6 @@ func GetConfigValues(kc client.Client, opts *ManagerOptions, cs *certstore.CertS
 			err = unstructured.SetNestedMap(vals, licenses, "licenses")
 			if err != nil {
 				return nil, err
-			}
-		}
-
-		for _, cc := range cluster.Status.ClusterClaims {
-			if cc.Name == kmapi.ClusterClaimKeyInfo {
-				var info kmapi.ClusterClaimInfo
-				if err := yaml.Unmarshal([]byte(cc.Value), &info); err != nil {
-					return nil, err
-				}
-				if slices.Contains(info.ClusterMetadata.ClusterManagers, kmapi.ClusterManagerOpenShift.Name()) {
-					if err := unstructured.SetNestedField(values, nil, "image", "securityContext", "runAsUser"); err != nil {
-						return nil, err
-					}
-					if err := unstructured.SetNestedField(values, nil, "podSecurityContext", "fsGroup"); err != nil {
-						return nil, err
-					}
-				}
-				break
 			}
 		}
 
