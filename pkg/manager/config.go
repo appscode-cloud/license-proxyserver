@@ -165,7 +165,7 @@ func GetConfigValues(kc client.Client, opts *ManagerOptions, cs *certstore.CertS
 		}
 
 		if sec.Data != nil {
-			licenses := make(map[string]interface{})
+			licenses := make(map[string]any)
 			for key, value := range sec.Data {
 				licenses[key] = string(value)
 			}
