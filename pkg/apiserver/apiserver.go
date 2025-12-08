@@ -29,7 +29,6 @@ import (
 	"go.bytebuilders.dev/license-proxyserver/pkg/registry/proxyserver/licenserequest"
 	"go.bytebuilders.dev/license-proxyserver/pkg/registry/proxyserver/licensestatus"
 	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
-	licenseclient "go.bytebuilders.dev/license-verifier/client"
 	pc "go.bytebuilders.dev/license-verifier/client"
 	"go.bytebuilders.dev/license-verifier/info"
 
@@ -185,7 +184,7 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 		if c.ExtraConfig.Token == "" {
 			return nil, fmt.Errorf("missing --token")
 		}
-		lc, err = licenseclient.NewClient(
+		lc, err = pc.NewClient(
 			c.ExtraConfig.BaseURL,
 			c.ExtraConfig.Token, cid,
 			c.ExtraConfig.CACert,
