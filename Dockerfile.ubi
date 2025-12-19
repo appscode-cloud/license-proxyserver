@@ -15,7 +15,7 @@
 FROM {ARG_FROM}
 
 LABEL org.opencontainers.image.source="https://github.com/appscode-cloud/license-proxyserver" \
-    name="ACE License Proxyserver" \
+    name="AppsCode License Proxyserver" \
     maintainer=AppsCode \
     vendor=AppsCode \
     version={ARG_TAG} \
