@@ -8,9 +8,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	workapiv1 "open-cluster-management.io/api/work/v1"
-
 	"open-cluster-management.io/addon-framework/pkg/agent"
+	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
+	clusterv1 "open-cluster-management.io/api/cluster/v1"
+	workapiv1 "open-cluster-management.io/api/work/v1"
 )
 
 // DeploymentProber is to check the addon status based on status
@@ -31,8 +32,34 @@ func NewDeploymentProber(deployments ...types.NamespacedName) *agent.HealthProbe
 	return &agent.HealthProber{
 		Type: agent.HealthProberTypeWork,
 		WorkProber: &agent.WorkHealthProber{
-			ProbeFields: probeFields,
-			HealthCheck: DeploymentAvailabilityHealthCheck,
+			ProbeFields:   probeFields,
+			HealthChecker: DeploymentAvailabilityHealthChecker,
+		},
+	}
+}
+
+func NewAllDeploymentsProber() *agent.HealthProber {
+	probeFields := []agent.ProbeField{
+		{
+			ResourceIdentifier: workapiv1.ResourceIdentifier{
+				Group:     "apps",
+				Resource:  "deployments",
+				Name:      "*",
+				Namespace: "*",
+			},
+			ProbeRules: []workapiv1.FeedbackRule{
+				{
+					Type: workapiv1.WellKnownStatusType,
+				},
+			},
+		},
+	}
+
+	return &agent.HealthProber{
+		Type: agent.HealthProberTypeWork,
+		WorkProber: &agent.WorkHealthProber{
+			ProbeFields:   probeFields,
+			HealthChecker: DeploymentAvailabilityHealthChecker,
 		},
 	}
 }
@@ -57,12 +84,43 @@ func (d *DeploymentProber) ProbeFields() []agent.ProbeField {
 	return probeFields
 }
 
+// Deprecated: use DeploymentAvailabilityHealthChecker instead.
 func DeploymentAvailabilityHealthCheck(identifier workapiv1.ResourceIdentifier,
 	result workapiv1.StatusFeedbackResult) error {
-	return WorkloadAvailabilityHealthCheck(identifier, result)
+	return checkWorkloadAvailabilityHealth(identifier, result)
 }
 
-func WorkloadAvailabilityHealthCheck(identifier workapiv1.ResourceIdentifier,
+// Deprecated: use DeploymentAvailabilityHealthChecker instead.
+func AllDeploymentsAvailabilityHealthCheck(results []agent.FieldResult,
+	cluster *clusterv1.ManagedCluster, addon *addonapiv1alpha1.ManagedClusterAddOn) error {
+	if len(results) < 2 {
+		return fmt.Errorf("all deployments are not available")
+	}
+
+	for _, result := range results {
+		if err := checkWorkloadAvailabilityHealth(result.ResourceIdentifier, result.FeedbackResult); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func DeploymentAvailabilityHealthChecker(results []agent.FieldResult,
+	cluster *clusterv1.ManagedCluster, addon *addonapiv1alpha1.ManagedClusterAddOn) error {
+	return WorkloadAvailabilityHealthChecker(results, cluster, addon)
+}
+
+func WorkloadAvailabilityHealthChecker(results []agent.FieldResult,
+	cluster *clusterv1.ManagedCluster, addon *addonapiv1alpha1.ManagedClusterAddOn) error {
+	for _, result := range results {
+		if err := checkWorkloadAvailabilityHealth(result.ResourceIdentifier, result.FeedbackResult); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func checkWorkloadAvailabilityHealth(identifier workapiv1.ResourceIdentifier,
 	result workapiv1.StatusFeedbackResult) error {
 	// only support deployments and daemonsets for now
 	if identifier.Resource != "deployments" && identifier.Resource != "daemonsets" {
@@ -146,6 +204,12 @@ func FilterWorkloads(objects []runtime.Object) []WorkloadMetadata {
 	for _, obj := range objects {
 		deployment, err := ConvertToDeployment(obj)
 		if err == nil {
+			// deployment replicas defaults to 1
+			// https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#replicas
+			var deploymentReplicas int32 = 1
+			if deployment.Spec.Replicas != nil {
+				deploymentReplicas = *deployment.Spec.Replicas
+			}
 			workloads = append(workloads, WorkloadMetadata{
 				GroupResource: schema.GroupResource{
 					Group:    appsv1.GroupName,
@@ -156,7 +220,7 @@ func FilterWorkloads(objects []runtime.Object) []WorkloadMetadata {
 					Name:      deployment.Name,
 				},
 				DeploymentSpec: &DeploymentSpec{
-					Replicas: *deployment.Spec.Replicas,
+					Replicas: deploymentReplicas,
 				},
 			})
 		}
@@ -182,22 +246,7 @@ func ConvertToDeployment(obj runtime.Object) (*appsv1.Deployment, error) {
 		return deployment, nil
 	}
 
-	if obj.GetObjectKind().GroupVersionKind().Group != appsv1.GroupName ||
-		obj.GetObjectKind().GroupVersionKind().Kind != "Deployment" {
-		return nil, fmt.Errorf("not deployment object, %v", obj.GetObjectKind())
-	}
-
-	deployment := &appsv1.Deployment{}
-	uobj, ok := obj.(*unstructured.Unstructured)
-	if !ok {
-		return deployment, fmt.Errorf("not unstructured object, %v", obj.GetObjectKind())
-	}
-
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(uobj.Object, deployment)
-	if err != nil {
-		return nil, err
-	}
-	return deployment, nil
+	return ConvertTo[appsv1.Deployment](obj, appsv1.GroupName, "Deployment")
 }
 
 func DeploymentWellKnowManifestConfig(namespace, name string) workapiv1.ManifestConfigOption {
@@ -237,24 +286,29 @@ func ConvertToDaemonSet(obj runtime.Object) (*appsv1.DaemonSet, error) {
 		return daemonSet, nil
 	}
 
-	if obj.GetObjectKind().GroupVersionKind().Group != appsv1.GroupName ||
-		obj.GetObjectKind().GroupVersionKind().Kind != "DaemonSet" {
-		return nil, fmt.Errorf("not daemonset object, %v", obj.GetObjectKind())
-	}
-
-	daemonSet := &appsv1.DaemonSet{}
-	uobj, ok := obj.(*unstructured.Unstructured)
-	if !ok {
-		return daemonSet, fmt.Errorf("not unstructured object, %v", obj.GetObjectKind())
-	}
-
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(uobj.Object, daemonSet)
-	if err != nil {
-		return nil, err
-	}
-	return daemonSet, nil
+	return ConvertTo[appsv1.DaemonSet](obj, appsv1.GroupName, "DaemonSet")
 }
 
 func DaemonSetWellKnowManifestConfig(namespace, name string) workapiv1.ManifestConfigOption {
 	return WellKnowManifestConfig(appsv1.GroupName, "daemonsets", namespace, name)
+}
+func ConvertTo[T any](obj runtime.Object, group, kind string) (*T, error) {
+	// Verify GroupVersionKind matches expected values
+	gvk := obj.GetObjectKind().GroupVersionKind()
+	if gvk.Group != group || gvk.Kind != kind {
+		return nil, fmt.Errorf("not %s object, %v", kind, obj.GetObjectKind())
+	}
+
+	// Handle unstructured conversion
+	uobj, ok := obj.(*unstructured.Unstructured)
+	if !ok {
+		return nil, fmt.Errorf("not unstructured object, %v", obj.GetObjectKind())
+	}
+
+	// Create new instance of target type and convert
+	target := new(T)
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(uobj.Object, target); err != nil {
+		return nil, err
+	}
+	return target, nil
 }

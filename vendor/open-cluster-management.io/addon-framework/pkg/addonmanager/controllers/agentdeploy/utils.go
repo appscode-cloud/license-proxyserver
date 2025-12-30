@@ -8,6 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
@@ -269,7 +270,11 @@ func (b *addonWorksBuilder) BuildDeployWorks(installMode, addonWorkNamespace str
 	// This owner is only added to the manifestWork deployed in managed cluster ns.
 	// the manifestWork in managed cluster ns is cleaned up via the addon ownerRef, so need to add the owner.
 	// the manifestWork in hosting cluster ns is cleaned up by its controller since it and its addon cross ns.
-	owner := metav1.NewControllerRef(addon, addonapiv1alpha1.GroupVersion.WithKind("ManagedClusterAddOn"))
+	owner := metav1.NewControllerRef(addon, schema.GroupVersionKind{
+		Group:   addonapiv1alpha1.GroupName,
+		Version: addonapiv1alpha1.GroupVersion.Version,
+		Kind:    "ManagedClusterAddOn",
+	})
 
 	var deletionOrphaningRules []workapiv1.OrphaningRule
 	for _, object := range objects {
@@ -331,7 +336,11 @@ func (b *addonWorksBuilder) BuildHookWork(installMode, addonWorkNamespace string
 	var hookManifests []workapiv1.Manifest
 	var hookManifestConfigs []workapiv1.ManifestConfigOption
 
-	owner := metav1.NewControllerRef(addon, addonapiv1alpha1.GroupVersion.WithKind("ManagedClusterAddOn"))
+	owner := metav1.NewControllerRef(addon, schema.GroupVersionKind{
+		Group:   addonapiv1alpha1.GroupName,
+		Version: addonapiv1alpha1.GroupVersion.Version,
+		Kind:    "ManagedClusterAddOn",
+	})
 
 	for _, object := range objects {
 		deployable, err := b.processor.deployable(b.hostedModeEnabled, installMode, object)
@@ -471,7 +480,7 @@ func newAddonWorkObjectMeta(namePrefix, addonName, addonNamespace, workNamespace
 
 func getManifestConfigOption(agentAddon agent.AgentAddon,
 	cluster *clusterv1.ManagedCluster,
-	addon *addonapiv1alpha1.ManagedClusterAddOn) []workapiv1.ManifestConfigOption {
+	addon *addonapiv1alpha1.ManagedClusterAddOn) ([]workapiv1.ManifestConfigOption, error) {
 	manifestConfigs := []workapiv1.ManifestConfigOption{}
 
 	if agentAddon.GetAgentAddonOptions().HealthProber != nil &&
@@ -491,7 +500,7 @@ func getManifestConfigOption(agentAddon agent.AgentAddon,
 
 		manifests, err := agentAddon.Manifests(cluster, addon)
 		if err != nil {
-			return manifestConfigs
+			return manifestConfigs, fmt.Errorf("get all deployments error: %v", err)
 		}
 
 		deployments := utils.FilterDeployments(manifests)
@@ -506,7 +515,7 @@ func getManifestConfigOption(agentAddon agent.AgentAddon,
 
 		manifests, err := agentAddon.Manifests(cluster, addon)
 		if err != nil {
-			return manifestConfigs
+			return manifestConfigs, fmt.Errorf("get all workloads error: %v", err)
 		}
 		workloads := utils.FilterWorkloads(manifests)
 		for _, workload := range workloads {
@@ -543,7 +552,7 @@ func getManifestConfigOption(agentAddon agent.AgentAddon,
 			manifestConfigs[index].UpdateStrategy = mc.UpdateStrategy
 		}
 	}
-	return manifestConfigs
+	return manifestConfigs, nil
 }
 
 func containsResourceIdentifier(mcs []workapiv1.ManifestConfigOption, ri workapiv1.ResourceIdentifier) int {

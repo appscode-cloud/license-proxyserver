@@ -35,8 +35,8 @@ type addonConfigController struct {
 	addonLister                  addonlisterv1alpha1.ManagedClusterAddOnLister
 	addonIndexer                 cache.Indexer
 	configListers                map[schema.GroupResource]dynamiclister.Lister
-	queue                        workqueue.RateLimitingInterface
-	addonFilterFunc              factory.EventFilterFunc
+	queue                        workqueue.TypedRateLimitingInterface[string]
+	cmaFilterFunc                factory.EventFilterFunc
 	configGVRs                   map[schema.GroupVersionResource]bool
 	clusterManagementAddonLister addonlisterv1alpha1.ClusterManagementAddOnLister
 }
@@ -47,7 +47,7 @@ func NewAddonConfigController(
 	clusterManagementAddonInformers addoninformerv1alpha1.ClusterManagementAddOnInformer,
 	configInformerFactory dynamicinformer.DynamicSharedInformerFactory,
 	configGVRs map[schema.GroupVersionResource]bool,
-	addonFilterFunc factory.EventFilterFunc,
+	cmaFilterFunc factory.EventFilterFunc,
 ) factory.Controller {
 	syncCtx := factory.NewSyncContext(controllerName)
 
@@ -57,7 +57,7 @@ func NewAddonConfigController(
 		addonIndexer:                 addonInformers.Informer().GetIndexer(),
 		configListers:                map[schema.GroupResource]dynamiclister.Lister{},
 		queue:                        syncCtx.Queue(),
-		addonFilterFunc:              addonFilterFunc,
+		cmaFilterFunc:                cmaFilterFunc,
 		configGVRs:                   configGVRs,
 		clusterManagementAddonLister: clusterManagementAddonInformers.Lister(),
 	}
@@ -71,6 +71,8 @@ func NewAddonConfigController(
 			return []string{key}
 		}, addonInformers.Informer()).
 		WithBareInformers(configInformers...).
+		// clusterManagementAddonLister is used, so wait for cache sync
+		WithBareInformers(clusterManagementAddonInformers.Informer()).
 		WithSync(c.sync).ToController(controllerName)
 }
 
@@ -151,7 +153,7 @@ func (c *addonConfigController) sync(ctx context.Context, syncCtx factory.SyncCo
 		return err
 	}
 
-	if !c.addonFilterFunc(cma) {
+	if c.cmaFilterFunc != nil && !c.cmaFilterFunc(cma) {
 		return nil
 	}
 
@@ -170,12 +172,9 @@ func (c *addonConfigController) sync(ctx context.Context, syncCtx factory.SyncCo
 }
 
 func (c *addonConfigController) updateConfigSpecHashAndGenerations(addon *addonapiv1alpha1.ManagedClusterAddOn) error {
-	supportedConfigSet := map[addonapiv1alpha1.ConfigGroupResource]bool{}
-	for _, config := range addon.Status.SupportedConfigs {
-		supportedConfigSet[config] = true
-	}
 	for index, configReference := range addon.Status.ConfigReferences {
 
+		// do not update for unsupported configs
 		if !utils.ContainGR(
 			c.configGVRs,
 			configReference.ConfigGroupResource.Group,
@@ -209,10 +208,6 @@ func (c *addonConfigController) updateConfigSpecHashAndGenerations(addon *addona
 
 		// update desired spec hash only for the configs in spec
 		for _, addonconfig := range addon.Spec.Configs {
-			// do not update spec hash for unsupported configs
-			if _, ok := supportedConfigSet[addonconfig.ConfigGroupResource]; !ok {
-				continue
-			}
 			if configReference.DesiredConfig == nil {
 				continue
 			}
