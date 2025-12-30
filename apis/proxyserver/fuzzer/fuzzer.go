@@ -19,19 +19,19 @@ package fuzzer
 import (
 	"go.bytebuilders.dev/license-proxyserver/apis/proxyserver/v1alpha1"
 
-	fuzz "github.com/google/gofuzz"
 	runtimeserializer "k8s.io/apimachinery/pkg/runtime/serializer"
+	"sigs.k8s.io/randfill"
 )
 
 // Funcs returns the fuzzer functions for this api group.
 var Funcs = func(codecs runtimeserializer.CodecFactory) []any {
 	return []any{
 		// v1alpha1
-		func(s *v1alpha1.LicenseRequest, c fuzz.Continue) {
-			c.FuzzNoCustom(s) // fuzz self without calling this function again
+		func(s *v1alpha1.LicenseRequest, c randfill.Continue) {
+			c.Fill(s) // fuzz self without calling this function again
 		},
-		func(s *v1alpha1.LicenseStatus, c fuzz.Continue) {
-			c.FuzzNoCustom(s) // fuzz self without calling this function again
+		func(s *v1alpha1.LicenseStatus, c randfill.Continue) {
+			c.Fill(s) // fuzz self without calling this function again
 		},
 	}
 }

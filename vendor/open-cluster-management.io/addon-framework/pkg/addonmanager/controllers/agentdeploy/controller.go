@@ -32,6 +32,7 @@ import (
 	"open-cluster-management.io/addon-framework/pkg/addonmanager/constants"
 	"open-cluster-management.io/addon-framework/pkg/agent"
 	"open-cluster-management.io/addon-framework/pkg/index"
+	"open-cluster-management.io/addon-framework/pkg/utils"
 	"open-cluster-management.io/sdk-go/pkg/basecontroller/factory"
 )
 
@@ -49,7 +50,8 @@ type addonDeployController struct {
 	managedClusterAddonIndexer cache.Indexer
 	workIndexer                cache.Indexer
 	agentAddons                map[string]agent.AgentAddon
-	queue                      workqueue.RateLimitingInterface
+	queue                      workqueue.TypedRateLimitingInterface[string]
+	mcaFilterFunc              utils.ManagedClusterAddOnFilterFunc
 }
 
 func NewAddonDeployController(
@@ -59,6 +61,7 @@ func NewAddonDeployController(
 	addonInformers addoninformerv1alpha1.ManagedClusterAddOnInformer,
 	workInformers workinformers.ManifestWorkInformer,
 	agentAddons map[string]agent.AgentAddon,
+	mcaFilterFunc utils.ManagedClusterAddOnFilterFunc,
 ) factory.Controller {
 	syncCtx := factory.NewSyncContext(controllerName)
 
@@ -74,7 +77,10 @@ func NewAddonDeployController(
 		managedClusterAddonIndexer: addonInformers.Informer().GetIndexer(),
 		workIndexer:                workInformers.Informer().GetIndexer(),
 		agentAddons:                agentAddons,
+		mcaFilterFunc:              mcaFilterFunc,
 	}
+
+	c.setClusterInformerHandler(clusterInformers)
 
 	f := factory.New().WithSyncContext(syncCtx).
 		WithFilteredEventsInformersQueueKeysFunc(
@@ -126,15 +132,13 @@ func NewAddonDeployController(
 			},
 			workInformers.Informer(),
 		).
+		WithBareInformers(clusterInformers.Informer()).
 		WithSync(c.sync)
 
-	if c.watchManagedCluster(clusterInformers) {
-		f.WithBareInformers(clusterInformers.Informer())
-	}
 	return f.ToController(controllerName)
 }
 
-func (c addonDeployController) watchManagedCluster(clusterInformers clusterinformers.ManagedClusterInformer) bool {
+func (c addonDeployController) setClusterInformerHandler(clusterInformers clusterinformers.ManagedClusterInformer) {
 	var filters []func(old, new *clusterv1.ManagedCluster) bool
 	for _, addon := range c.agentAddons {
 		if addon.GetAgentAddonOptions().AgentDeployTriggerClusterFilter != nil {
@@ -142,7 +146,7 @@ func (c addonDeployController) watchManagedCluster(clusterInformers clusterinfor
 		}
 	}
 	if len(filters) == 0 {
-		return false
+		return
 	}
 
 	_, err := clusterInformers.Informer().AddEventHandler(
@@ -169,8 +173,8 @@ func (c addonDeployController) watchManagedCluster(clusterInformers clusterinfor
 	if err != nil {
 		utilruntime.HandleError(err)
 	}
-	return true
 }
+
 func (c *addonDeployController) enqueueAddOnsByCluster() func(obj interface{}) {
 	return func(obj interface{}) {
 		accessor, _ := meta.Accessor(obj)
@@ -235,6 +239,10 @@ func (c *addonDeployController) sync(ctx context.Context, syncCtx factory.SyncCo
 		return err
 	}
 
+	if c.mcaFilterFunc != nil && !c.mcaFilterFunc(addon) {
+		return nil
+	}
+
 	// to deploy agents if there is RegistrationApplied condition.
 	if meta.FindStatusCondition(addon.Status.Conditions, addonapiv1alpha1.ManagedClusterAddOnRegistrationApplied) == nil {
 		return nil
@@ -289,8 +297,9 @@ func (c *addonDeployController) sync(ctx context.Context, syncCtx factory.SyncCo
 			getWorkByAddon: c.getWorksByAddonFn(index.ManifestWorkHookByHostedAddon),
 			agentAddon:     agentAddon},
 		&healthCheckSyncer{
-			getWorkByAddon: c.getWorksByAddonFn(index.ManifestWorkByAddon),
-			agentAddon:     agentAddon,
+			getWorkByAddon:       c.getWorksByAddonFn(index.ManifestWorkByAddon),
+			getWorkByHostedAddon: c.getWorksByAddonFn(index.ManifestWorkByHostedAddon),
+			agentAddon:           agentAddon,
 		},
 	}
 
@@ -306,7 +315,7 @@ func (c *addonDeployController) sync(ctx context.Context, syncCtx factory.SyncCo
 	}
 
 	if err = c.updateAddon(ctx, addon, oldAddon); err != nil {
-		return err
+		return fmt.Errorf("failed to update addon %s/%s: %w", addon.Namespace, addon.Name, err)
 	}
 	return errorsutil.NewAggregate(errs)
 }
@@ -316,7 +325,10 @@ func (c *addonDeployController) sync(ctx context.Context, syncCtx factory.SyncCo
 func (c *addonDeployController) updateAddon(ctx context.Context, new, old *addonapiv1alpha1.ManagedClusterAddOn) error {
 	if !equality.Semantic.DeepEqual(new.GetFinalizers(), old.GetFinalizers()) {
 		_, err := c.addonClient.AddonV1alpha1().ManagedClusterAddOns(new.Namespace).Update(ctx, new, metav1.UpdateOptions{})
-		return err
+		if err != nil {
+			return fmt.Errorf("failed to update addon finalizers: %w", err)
+		}
+		return nil
 	}
 
 	addonPatcher := patcher.NewPatcher[
@@ -325,7 +337,10 @@ func (c *addonDeployController) updateAddon(ctx context.Context, new, old *addon
 		addonapiv1alpha1.ManagedClusterAddOnStatus](c.addonClient.AddonV1alpha1().ManagedClusterAddOns(new.Namespace))
 
 	_, err := addonPatcher.PatchStatus(ctx, new, new.Status, old.Status)
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to update addon status: %w", err)
+	}
+	return nil
 }
 
 func (c *addonDeployController) applyWork(ctx context.Context, appliedType string,
@@ -406,7 +421,11 @@ func (c *addonDeployController) buildDeployManifestWorksFunc(addonWorkBuilder *a
 			mode, _ = agentAddon.GetAgentAddonOptions().HostedModeInfoFunc(addon, cluster)
 		}
 
-		manifestOptions := getManifestConfigOption(agentAddon, cluster, addon)
+		manifestOptions, err := getManifestConfigOption(agentAddon, cluster, addon)
+		if err != nil {
+			return nil, nil, fmt.Errorf("get manifest config option error: %v", err)
+		}
+
 		existingWorksCopy := []workapiv1.ManifestWork{}
 		for _, work := range existingWorks {
 			existingWorksCopy = append(existingWorksCopy, *work)

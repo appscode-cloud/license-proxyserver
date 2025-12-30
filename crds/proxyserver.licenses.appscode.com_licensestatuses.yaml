@@ -20,14 +20,19 @@ spec:
         description: LicenseStatus is the Schema for the licensestatuses API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -39,9 +44,9 @@ spec:
                   type: string
                 type: array
               user:
-                description: Result contains extra details into why an admission request
-                  was denied. This field IS NOT consulted in any way if "Allowed"
-                  is "true".
+                description: |-
+                  Result contains extra details into why an admission request was denied.
+                  This field IS NOT consulted in any way if "Allowed" is "true".
                 properties:
                   extra:
                     additionalProperties:
@@ -57,9 +62,10 @@ spec:
                       type: string
                     type: array
                   uid:
-                    description: A unique value that identifies this user across time.
-                      If this user is deleted and another user by the same name is
-                      added, they will have different UIDs.
+                    description: |-
+                      A unique value that identifies this user across time. If this user is
+                      deleted and another user by the same name is added, they will have
+                      different UIDs.
                     type: string
                   username:
                     description: The name that uniquely identifies this user among
@@ -91,10 +97,11 @@ spec:
                 description: License defines a AppsCode product license info.
                 properties:
                   apiVersion:
-                    description: 'APIVersion defines the versioned schema of this
-                      representation of an object. Servers should convert recognized
-                      schemas to the latest internal value, and may reject unrecognized
-                      values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                    description: |-
+                      APIVersion defines the versioned schema of this representation of an object.
+                      Servers should convert recognized schemas to the latest internal value, and
+                      may reject unrecognized values.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
                     type: string
                   clusters:
                     items:
@@ -113,10 +120,12 @@ spec:
                   issuer:
                     type: string
                   kind:
-                    description: 'Kind is a string value representing the REST resource
-                      this object represents. Servers may infer this from the endpoint
-                      the client submits requests to. Cannot be updated. In CamelCase.
-                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    description: |-
+                      Kind is a string value representing the REST resource this object represents.
+                      Servers may infer this from the endpoint the client submits requests to.
+                      Cannot be updated.
+                      In CamelCase.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
                     type: string
                   notAfter:
                     format: date-time

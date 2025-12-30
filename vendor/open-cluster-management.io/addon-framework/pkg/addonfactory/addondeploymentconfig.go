@@ -22,6 +22,23 @@ var AddOnDeploymentConfigGVR = schema.GroupVersionResource{
 	Resource: "addondeploymentconfigs",
 }
 
+type resourceRequirements struct {
+	Limits   map[string]string `json:"limits,omitempty"`
+	Requests map[string]string `json:"requests,omitempty"`
+}
+
+// RegexResourceRequirements defines a resource requirement rule for containers. A container is eligible for the
+// specified resource requirements if its container ID matches the regular expression.
+type RegexResourceRequirements struct {
+	// ContainerIDRegex is the regular expression used to match container IDs.
+	ContainerIDRegex string `json:"containerIDRegex"`
+	// Resources defines the resource requirements for matched containers, its resource value is plain string
+	Resources resourceRequirements `json:"resources"`
+
+	// ResourcesRaw defines the resource requirements for matched containers, its resource value is structure
+	ResourcesRaw corev1.ResourceRequirements `json:"resourcesRaw"`
+}
+
 // ToAddOnNodePlacementValues only transform the AddOnDeploymentConfig NodePlacement part into Values object that has
 // a specific for helm chart values
 // for example: the spec of one AddOnDeploymentConfig is:
@@ -109,6 +126,47 @@ func ToAddOnProxyConfigValues(config addonapiv1alpha1.AddOnDeploymentConfig) (Va
 	return values, nil
 }
 
+// ToAddOnResourceRequirementsValues only transform the AddOnDeploymentConfig ResourceRequirements part into Values object that has
+// a specific for helm chart values
+// for example: the spec of one AddOnDeploymentConfig is:
+//
+//	{
+//	  resourceRequirements:[{containerID: "*:*:*", resources: { limits: { memory: "4Gi"}, requests: { memory: "512Mi"}}}],
+//	}
+//
+// after transformed, the Values will be:
+// map[global:map[resourceRequirements:[map[containerIDRegExp:"^.+:.+:.+$" resources:map[limits:map[memory:4Gi]
+// requests:map[memory:512Mi]]]]]]
+func ToAddOnResourceRequirementsValues(config addonapiv1alpha1.AddOnDeploymentConfig) (Values, error) {
+	if config.Spec.ResourceRequirements == nil {
+		return nil, nil
+	}
+
+	resourceRequirements, err := GetRegexResourceRequirements(config.Spec.ResourceRequirements)
+	if err != nil {
+		return nil, err
+	}
+
+	type global struct {
+		ResourceRequirements []RegexResourceRequirements `json:"resourceRequirements"`
+	}
+
+	jsonStruct := struct {
+		Global global `json:"global"`
+	}{
+		Global: global{
+			ResourceRequirements: resourceRequirements,
+		},
+	}
+
+	values, err := JsonStructToValues(jsonStruct)
+	if err != nil {
+		return nil, err
+	}
+
+	return values, nil
+}
+
 // ToAddOnCustomizedVariableValues only transform the CustomizedVariables in the spec of AddOnDeploymentConfig into Values object.
 // for example: the spec of one AddOnDeploymentConfig is:
 //
@@ -166,15 +224,54 @@ func GetAddOnDeploymentConfigValues(
 	}
 }
 
+func GetRegexResourceRequirements(requirements []addonapiv1alpha1.ContainerResourceRequirements) ([]RegexResourceRequirements, error) {
+	newRequirements := []RegexResourceRequirements{}
+	for _, item := range requirements {
+		// convert container ID to regex
+		parts := strings.Split(item.ContainerID, ":")
+		if len(parts) != 3 {
+			return nil, fmt.Errorf("invalid ContainerID: %s", item.ContainerID)
+		}
+		for index, part := range parts {
+			if part == "*" {
+				parts[index] = ".+"
+			}
+		}
+		newRequirements = append(newRequirements, RegexResourceRequirements{
+			ContainerIDRegex: fmt.Sprintf("^%s:%s:%s$", parts[0], parts[1], parts[2]),
+			Resources: resourceRequirements{
+				Requests: toStringResourceList(item.Resources.Requests),
+				Limits:   toStringResourceList(item.Resources.Limits),
+			},
+			ResourcesRaw: item.Resources,
+		})
+	}
+
+	return newRequirements, nil
+}
+
+func toStringResourceList(resourceList corev1.ResourceList) map[string]string {
+	if len(resourceList) == 0 {
+		return nil
+	}
+	newResourceList := map[string]string{}
+	for key, value := range resourceList {
+		newResourceList[string(key)] = value.String()
+	}
+	return newResourceList
+}
+
 // ToAddOnDeploymentConfigValues transform the AddOnDeploymentConfig object into Values object that is a plain value map
 // for example: the spec of one AddOnDeploymentConfig is:
 //
 //	{
 //		customizedVariables: [{name: "Image", value: "img"}, {name: "ImagePullPolicy", value: "Always"}],
 //		nodePlacement: {nodeSelector: {"host": "ssd"}, tolerations: {"key": "test"}},
+//		resourceRequirements:[{containerID: "*:*:*", resources: { limits: { memory: "4Gi"}, requests: { memory: "512Mi"}}}],
 //	}
 //
-// after transformed, the key set of Values object will be: {"Image", "ImagePullPolicy", "NodeSelector", "Tolerations"}
+// after transformed, the key set of Values object will be: {"Image", "ImagePullPolicy", "NodeSelector", "Tolerations",
+// "ResourceRequirements"}
 func ToAddOnDeploymentConfigValues(config addonapiv1alpha1.AddOnDeploymentConfig) (Values, error) {
 	values, err := ToAddOnCustomizedVariableValues(config)
 	if err != nil {
@@ -198,6 +295,15 @@ func ToAddOnDeploymentConfigValues(config addonapiv1alpha1.AddOnDeploymentConfig
 	}
 	if len(config.Spec.ProxyConfig.CABundle) > 0 {
 		values["ProxyCABundle"] = string(config.Spec.ProxyConfig.CABundle)
+	}
+
+	// load ResourceRequirements settings
+	resourceRequirements, err := GetRegexResourceRequirements(config.Spec.ResourceRequirements)
+	if err != nil {
+		return nil, err
+	}
+	if len(resourceRequirements) > 0 {
+		values["ResourceRequirements"] = resourceRequirements
 	}
 
 	return values, nil

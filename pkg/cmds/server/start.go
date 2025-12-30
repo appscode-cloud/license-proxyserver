@@ -32,7 +32,7 @@ import (
 	"k8s.io/apiserver/pkg/endpoints/openapi"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
-	utilversion "k8s.io/component-base/version"
+	basecompatibility "k8s.io/component-base/compatibility"
 	ou "kmodules.xyz/client-go/openapi"
 	"kmodules.xyz/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -96,7 +96,7 @@ func (o *LicenseProxyServerOptions) Config() (*apiserver.Config, error) {
 	}
 
 	serverConfig := genericapiserver.NewRecommendedConfig(apiserver.Codecs)
-	serverConfig.EffectiveVersion = utilversion.NewEffectiveVersion("v1.0.0")
+	serverConfig.EffectiveVersion = basecompatibility.NewEffectiveVersionFromString("v1.0.0", "", "")
 	if err := o.RecommendedOptions.ApplyTo(serverConfig); err != nil {
 		return nil, err
 	}

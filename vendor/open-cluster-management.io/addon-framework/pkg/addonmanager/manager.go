@@ -106,8 +106,7 @@ func (a *addonManager) Start(ctx context.Context) error {
 
 	err = addonInformers.Addon().V1alpha1().ManagedClusterAddOns().Informer().AddIndexers(
 		cache.Indexers{
-			index.ManagedClusterAddonByNamespace: index.IndexManagedClusterAddonByNamespace, // addonDeployController
-			index.ManagedClusterAddonByName:      index.IndexManagedClusterAddonByName,      // addonConfigController
+			index.ManagedClusterAddonByNamespace: index.IndexManagedClusterAddonByNamespace, // agentDeployController
 			index.AddonByConfig:                  index.IndexAddonByConfig,                  // addonConfigController
 		},
 	)
@@ -117,14 +116,14 @@ func (a *addonManager) Start(ctx context.Context) error {
 
 	err = addonInformers.Addon().V1alpha1().ClusterManagementAddOns().Informer().AddIndexers(
 		cache.Indexers{
-			index.ClusterManagementAddonByConfig:    index.IndexClusterManagementAddonByConfig,    // managementAddonConfigController
-			index.ClusterManagementAddonByPlacement: index.IndexClusterManagementAddonByPlacement, // addonConfigController
+			index.ClusterManagementAddonByConfig: index.IndexClusterManagementAddonByConfig, // cmaConfigController
 		})
 	if err != nil {
 		return err
 	}
 
-	err = a.StartWithInformers(ctx, workClient, workInformers.Work().V1().ManifestWorks(), kubeInformers, addonInformers, clusterInformers, dynamicInformers)
+	err = a.StartWithInformers(ctx, workClient, workInformers.Work().V1().ManifestWorks(), kubeInformers,
+		addonInformers, clusterInformers, dynamicInformers)
 	if err != nil {
 		return err
 	}
@@ -141,5 +140,14 @@ func (a *addonManager) Start(ctx context.Context) error {
 func New(config *rest.Config) (AddonManager, error) {
 	return &addonManager{
 		NewBaseAddonManagerImpl(config),
+	}, nil
+}
+
+// NewWithOptionFuncs returns a new Manager for creating addon agents with OptionFunc functions.
+func NewWithOptionFuncs(config *rest.Config, optionFuncs ...OptionFunc) (AddonManager, error) {
+	manager := NewBaseAddonManagerImpl(config)
+	manager.ApplyOptionFuncs(optionFuncs...)
+	return &addonManager{
+		manager,
 	}, nil
 }
