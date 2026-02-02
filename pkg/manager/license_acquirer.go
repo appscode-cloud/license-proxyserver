@@ -125,6 +125,9 @@ func (r *LicenseAcquirer) reconcile(clusterName, cid string, features []string) 
 	err := r.Get(context.TODO(), client.ObjectKey{Name: sec.Name, Namespace: sec.Namespace}, &sec)
 	if err == nil {
 		secretExists = true
+		if sec.Data == nil {
+			sec.Data = map[string][]byte{}
+		}
 	} else if apierrors.IsNotFound(err) {
 		sec.Data = map[string][]byte{}
 	} else {
