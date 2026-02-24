@@ -44,6 +44,7 @@ import (
 	"open-cluster-management.io/api/addon/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -52,11 +53,11 @@ import (
 //go:embed all:agent-manifests
 var FS embed.FS
 
-func NewRegistrationOption(kubeConfig *rest.Config, addonName, agentName string) *agent.RegistrationOption {
+func NewRegistrationOption(restConfig *rest.Config, kc client.Client, addonName, agentName string) *agent.RegistrationOption {
 	return &agent.RegistrationOption{
 		CSRConfigurations: agent.KubeClientSignerConfigurations(addonName, agentName),
 		CSRApproveCheck:   agent.ApprovalAllCSRs,
-		PermissionConfig:  rbac.SetupPermission(kubeConfig, agentName),
+		PermissionConfig:  rbac.SetupPermission(restConfig, kc, agentName),
 		AgentInstallNamespace: func(addon *v1alpha1.ManagedClusterAddOn) (string, error) {
 			return common.AddonInstallationNamespace, nil
 		},
@@ -140,7 +141,7 @@ func runManagerController(ctx context.Context, cfg *rest.Config, opts *ManagerOp
 		os.Exit(1)
 	}
 
-	registrationOption := NewRegistrationOption(cfg, common.AddonName, common.AgentName)
+	registrationOption := NewRegistrationOption(cfg, hubManager.GetClient(), common.AddonName, common.AgentName)
 
 	addonManager, err := addonmanager.New(cfg)
 	if err != nil {
