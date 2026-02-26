@@ -19,6 +19,8 @@ package rbac
 import (
 	"context"
 
+	"go.bytebuilders.dev/license-proxyserver/pkg/common"
+
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,12 +29,14 @@ import (
 	"k8s.io/utils/ptr"
 	"open-cluster-management.io/addon-framework/pkg/agent"
 	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
+	addonv1beta1 "open-cluster-management.io/api/addon/v1beta1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func SetupPermission(kubeConfig *rest.Config, agentName string) agent.PermissionConfigFunc {
+func SetupPermission(restConfig *rest.Config, kc client.Client, agentName string) agent.PermissionConfigFunc {
 	return func(cluster *clusterv1.ManagedCluster, addon *addonv1alpha1.ManagedClusterAddOn) error {
-		nativeClient, err := kubernetes.NewForConfig(kubeConfig)
+		nativeClient, err := kubernetes.NewForConfig(restConfig)
 		if err != nil {
 			return err
 		}
@@ -81,10 +85,26 @@ func SetupPermission(kubeConfig *rest.Config, agentName string) agent.Permission
 			},
 			Subjects: []rbacv1.Subject{
 				{
-					Kind: rbacv1.UserKind,
-					Name: agentUser,
+					Kind: "ServiceAccount",
+					Name: common.AddonName + "-agent",
 				},
 			},
+		}
+
+		managedClusterAddon := &addonv1beta1.ManagedClusterAddOn{}
+		if err := kc.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: addon.Name}, managedClusterAddon); err != nil {
+			return err
+		}
+
+		for _, reg := range managedClusterAddon.Status.Registrations {
+			if reg.Type == addonv1beta1.KubeClient && reg.KubeClient.Driver == "csr" {
+				roleBinding.Subjects = []rbacv1.Subject{
+					{
+						Kind: "User",
+						Name: agentUser,
+					},
+				}
+			}
 		}
 
 		_, err = nativeClient.RbacV1().Roles(cluster.Name).Get(context.TODO(), role.Name, metav1.GetOptions{})

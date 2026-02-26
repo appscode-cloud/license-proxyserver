@@ -48,6 +48,8 @@ import (
 	"k8s.io/klog/v2"
 	cu "kmodules.xyz/client-go/client"
 	clustermeta "kmodules.xyz/client-go/cluster"
+	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
+	addonv1beta1 "open-cluster-management.io/api/addon/v1beta1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -70,6 +72,8 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(Scheme))
 	utilruntime.Must(clusterv1alpha1.Install(Scheme))
 	utilruntime.Must(core.AddToScheme(Scheme))
+	utilruntime.Must(addonv1alpha1.Install(Scheme))
+	utilruntime.Must(addonv1beta1.Install(Scheme))
 
 	// we need to add the options to empty v1
 	// TODO fix the server code to avoid this
