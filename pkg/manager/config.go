@@ -38,7 +38,8 @@ import (
 	kmapi "kmodules.xyz/client-go/api/v1"
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
 	agentapi "open-cluster-management.io/addon-framework/pkg/agent"
-	"open-cluster-management.io/api/addon/v1alpha1"
+	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
+	addonv1beta1 "open-cluster-management.io/api/addon/v1beta1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	clusterv1alpha1 "open-cluster-management.io/api/cluster/v1alpha1"
 	workv1 "open-cluster-management.io/api/work/v1"
@@ -54,10 +55,12 @@ func init() {
 	_ = clusterv1alpha1.Install(scheme)
 	_ = apiregistrationv1.AddToScheme(scheme)
 	_ = monitoringv1.AddToScheme(scheme)
+	_ = addonv1alpha1.Install(scheme)
+	_ = addonv1beta1.Install(scheme)
 }
 
 func GetConfigValues(kc client.Client, opts *ManagerOptions, cs *certstore.CertStore) addonfactory.GetValuesFunc {
-	return func(cluster *clusterv1.ManagedCluster, addon *v1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
+	return func(cluster *clusterv1.ManagedCluster, addon *addonv1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
 		caCrtBytes, _, err := cs.ReadBytes(common.CACertName)
 		if err != nil {
 			return nil, err
