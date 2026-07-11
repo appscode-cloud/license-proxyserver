@@ -104,7 +104,8 @@ func (r *LicenseSyncer) addLicense(data []byte) error {
 	}
 
 	if time.Until(license.NotAfter.Time) >= storage.MinRemainingLife {
-		klog.InfoS("adding license",
+		klog.InfoS(
+			"adding license",
 			"licenseID", license.ID,
 			"product", license.ProductLine,
 			"plan", license.PlanName,

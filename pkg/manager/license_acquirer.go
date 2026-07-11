@@ -148,7 +148,8 @@ func (r *LicenseAcquirer) reconcile(clusterName, cid string, features []string) 
 			l, c, err = r.getNewLicense(cid, []string{feature})
 			if err == nil {
 
-				klog.InfoS("acquired new license",
+				klog.InfoS(
+					"acquired new license",
 					"clusterName", clusterName,
 					"clusterUID", cid,
 					"licenseID", l.ID,

@@ -123,7 +123,8 @@ func (r *LicenseRegistry) LicenseForFeature(feature string) (*v1alpha1.License, 
 			heap.Pop(&q)
 			r.reg[feature] = q
 
-			klog.InfoS("removing license",
+			klog.InfoS(
+				"removing license",
 				"licenseID", item.ID,
 				"product", item.ProductLine,
 				"plan", item.PlanName,
