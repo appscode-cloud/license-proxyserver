@@ -70,7 +70,8 @@ func LoadDir(cid, dir string, reg *LicenseRegistry) error {
 			klog.ErrorS(err, "Skipping", "file", filename)
 			continue
 		} else if time.Until(license.NotAfter.Time) >= MinRemainingLife {
-			klog.InfoS("adding license",
+			klog.InfoS(
+				"adding license",
 				"dir", dir,
 				"licenseID", license.ID,
 				"product", license.ProductLine,

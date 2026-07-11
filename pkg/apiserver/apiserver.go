@@ -81,7 +81,8 @@ func init() {
 
 	// TODO: keep the generic API server from wanting this
 	unversioned := schema.GroupVersion{Group: "", Version: "v1"}
-	Scheme.AddUnversionedTypes(unversioned,
+	Scheme.AddUnversionedTypes(
+		unversioned,
 		&metav1.Status{},
 		&metav1.APIVersions{},
 		&metav1.APIGroupList{},
@@ -193,7 +194,8 @@ func (c completedConfig) New(ctx context.Context) (*LicenseProxyServer, error) {
 			c.ExtraConfig.Token, cid,
 			c.ExtraConfig.CACert,
 			c.ExtraConfig.InsecureSkipTLSVerify,
-			fmt.Sprintf("license-proxyserver/%s", v.Version.Version))
+			fmt.Sprintf("license-proxyserver/%s", v.Version.Version),
+		)
 		if err != nil {
 			return nil, err
 		}

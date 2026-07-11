@@ -176,7 +176,8 @@ func (r *Storage) getLicense(features []string) (*v1alpha1.License, error) {
 		return nil, err
 	}
 
-	klog.InfoS("adding license",
+	klog.InfoS(
+		"adding license",
 		"licenseID", l.ID,
 		"product", l.ProductLine,
 		"plan", l.PlanName,

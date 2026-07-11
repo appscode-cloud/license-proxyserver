@@ -77,7 +77,7 @@ func (o LicenseProxyServerOptions) AddFlags(fs *pflag.FlagSet) {
 
 // Validate validates LicenseProxyServerOptions
 func (o LicenseProxyServerOptions) Validate(args []string) error {
-	var errors []error
+	errors := make([]error, 0, 2)
 	errors = append(errors, o.RecommendedOptions.Validate()...)
 	errors = append(errors, o.ExtraOptions.Validate()...)
 	return utilerrors.NewAggregate(errors)
@@ -113,7 +113,8 @@ func (o *LicenseProxyServerOptions) Config() (*apiserver.Config, error) {
 		ou.GetDefinitions(
 			proxyv1alpha1.GetOpenAPIDefinitions,
 		),
-		openapi.NewDefinitionNamer(apiserver.Scheme))
+		openapi.NewDefinitionNamer(apiserver.Scheme),
+	)
 	serverConfig.OpenAPIConfig.Info.Title = "proxyserver"
 	serverConfig.OpenAPIConfig.Info.Version = v.Version.Version
 	serverConfig.OpenAPIConfig.IgnorePrefixes = ignorePrefixes
@@ -122,7 +123,8 @@ func (o *LicenseProxyServerOptions) Config() (*apiserver.Config, error) {
 		ou.GetDefinitions(
 			proxyv1alpha1.GetOpenAPIDefinitions,
 		),
-		openapi.NewDefinitionNamer(apiserver.Scheme))
+		openapi.NewDefinitionNamer(apiserver.Scheme),
+	)
 	serverConfig.OpenAPIV3Config.Info.Title = "proxyserver"
 	serverConfig.OpenAPIV3Config.Info.Version = v.Version.Version
 	serverConfig.OpenAPIV3Config.IgnorePrefixes = ignorePrefixes
