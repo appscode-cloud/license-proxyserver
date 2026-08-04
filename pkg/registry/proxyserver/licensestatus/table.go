@@ -154,12 +154,9 @@ func convertToHumanReadableDateType(timestamp time.Time) string {
 	if timestamp.IsZero() {
 		return "<unknown>"
 	}
-	var d time.Duration
 	now := time.Now()
 	if now.After(timestamp) {
-		d = now.Sub(timestamp)
-	} else {
-		d = timestamp.Sub(now)
+		return fmt.Sprintf("expired %s ago", duration.HumanDuration(now.Sub(timestamp)))
 	}
-	return duration.HumanDuration(d)
+	return duration.HumanDuration(timestamp.Sub(now))
 }
