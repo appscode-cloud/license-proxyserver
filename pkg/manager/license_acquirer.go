@@ -40,6 +40,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/klog/v2"
+	kmapi "kmodules.xyz/client-go/api/v1"
+	clustermeta "kmodules.xyz/client-go/cluster"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,6 +52,7 @@ const ttl = storage.LicenseAcquisitionBuffer + storage.MinRemainingLife
 
 type LicenseAcquirer struct {
 	client.Client
+	Reader                client.Reader
 	BaseURL               string
 	Token                 string
 	CaCert                []byte
@@ -188,8 +191,25 @@ func (r *LicenseAcquirer) reconcile(clusterName, cid string, features []string) 
 	return reconcile.Result{}, utilerrors.NewAggregate(errList)
 }
 
+// upstreamBaseURL resolves the license upstream from the hub's own cluster identity,
+// re-read on every acquisition because ui-server keeps ace-info reconciled.
+func (r *LicenseAcquirer) upstreamBaseURL() string {
+	md, err := clustermeta.ClusterMetadata(r.Reader)
+	if err != nil {
+		klog.ErrorS(err, "failed to read cluster metadata", "baseURL", r.BaseURL)
+		return r.BaseURL
+	}
+	if md.License == nil || md.License.Distributor != kmapi.LicenseDistributorSelfHosted || md.License.Endpoint == "" {
+		return r.BaseURL
+	}
+	if r.BaseURL != "" && r.BaseURL != md.License.Endpoint {
+		klog.Warningf("license endpoint drift: --baseURL is %s, cluster identity says %s; using %s", r.BaseURL, md.License.Endpoint, md.License.Endpoint)
+	}
+	return md.License.Endpoint
+}
+
 func (r *LicenseAcquirer) getNewLicense(cid string, features []string) (*v1alpha1.License, *v1alpha1.Contract, error) {
-	lc, err := pc.NewClient(r.BaseURL, r.Token, cid, r.CaCert, r.InsecureSkipTLSVerify, fmt.Sprintf("license-proxyserver-manager/%s", v.Version.Version))
+	lc, err := pc.NewClient(r.upstreamBaseURL(), r.Token, cid, r.CaCert, r.InsecureSkipTLSVerify, fmt.Sprintf("license-proxyserver-manager/%s", v.Version.Version))
 	if err != nil {
 		return nil, nil, err
 	}

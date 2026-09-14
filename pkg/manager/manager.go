@@ -130,6 +130,7 @@ func runManagerController(ctx context.Context, cfg *rest.Config, opts *ManagerOp
 	}
 	if err := (&LicenseAcquirer{
 		Client:                hubManager.GetClient(),
+		Reader:                hubManager.GetAPIReader(),
 		BaseURL:               opts.BaseURL,
 		Token:                 opts.Token,
 		CaCert:                caCert,
