@@ -576,7 +576,7 @@ github.com/yudai/golcs
 # github.com/zeebo/xxh3 v1.0.2
 ## explicit; go 1.17
 github.com/zeebo/xxh3
-# go.bytebuilders.dev/license-verifier v0.15.1-0.20260918041637-bc26e2334536
+# go.bytebuilders.dev/license-verifier v0.15.1-0.20260921061543-23ea70db2d5c
 ## explicit; go 1.25
 go.bytebuilders.dev/license-verifier
 go.bytebuilders.dev/license-verifier/apis/licenses
