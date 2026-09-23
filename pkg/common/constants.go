@@ -28,6 +28,8 @@ const (
 	ClusterClaimLicense     = "licenses.appscode.com"
 	LicenseSecret           = "license-proxyserver-licenses"
 	HubKubeconfigSecretName = "license-proxyserver-hub-kubeconfig"
+
+	LicenseContractsAnnotation = "proxyserver.licenses.appscode.com/contracts"
 )
 
 const (
