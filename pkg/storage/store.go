@@ -89,7 +89,10 @@ func (r *LicenseRegistry) Add(l *v1alpha1.License, c *v1alpha1.Contract) {
 	r.m.Lock()
 	defer r.m.Unlock()
 
-	if _, ok := r.store[l.ID]; ok {
+	if rec, ok := r.store[l.ID]; ok {
+		if rec.Contract == nil && c != nil {
+			r.store[l.ID] = &Record{License: rec.License, Contract: c}
+		}
 		return
 	}
 

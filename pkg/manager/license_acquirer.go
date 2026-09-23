@@ -19,6 +19,7 @@ package manager
 import (
 	"context"
 	"crypto/x509"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -139,15 +140,20 @@ func (r *LicenseAcquirer) reconcile(clusterName, cid string, features []string) 
 
 	var errList []error
 	var earliestExpired time.Time
+	contracts := map[string]*v1alpha1.Contract{}
 
 	reg, err := r.getLicenseRegistry(cid)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	for _, feature := range features {
+		var c *v1alpha1.Contract
 		l, found := reg.LicenseForFeature(feature)
-		if !found {
-			var c *v1alpha1.Contract
+		if found {
+			if rec, ok := reg.Get(l.ID); ok {
+				c = rec.Contract
+			}
+		} else {
 			l, c, err = r.getNewLicense(cid, []string{feature})
 			if err == nil {
 
@@ -171,11 +177,23 @@ func (r *LicenseAcquirer) reconcile(clusterName, cid string, features []string) 
 		}
 		if l != nil && l.Status == v1alpha1.LicenseActive {
 			sec.Data[l.PlanName] = l.Data
+			if c != nil {
+				contracts[l.ID] = c
+			}
 			if earliestExpired.IsZero() || earliestExpired.After(l.NotAfter.Time) {
 				earliestExpired = l.NotAfter.Time
 			}
 		}
 	}
+
+	contractsJSON, err := json.Marshal(contracts)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	if sec.Annotations == nil {
+		sec.Annotations = map[string]string{}
+	}
+	sec.Annotations[common.LicenseContractsAnnotation] = string(contractsJSON)
 
 	if secretExists {
 		errList = append(errList, r.Update(context.TODO(), &sec))

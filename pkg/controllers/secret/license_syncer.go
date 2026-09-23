@@ -19,12 +19,14 @@ package secret
 import (
 	"context"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"go.bytebuilders.dev/license-proxyserver/pkg/common"
 	"go.bytebuilders.dev/license-proxyserver/pkg/storage"
 	verifier "go.bytebuilders.dev/license-verifier"
+	"go.bytebuilders.dev/license-verifier/apis/licenses/v1alpha1"
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,8 +59,15 @@ func (r *LicenseSyncer) Reconcile(ctx context.Context, request reconcile.Request
 		return reconcile.Result{}, err
 	}
 
+	contracts := map[string]*v1alpha1.Contract{}
+	if v, ok := src.Annotations[common.LicenseContractsAnnotation]; ok {
+		if err := json.Unmarshal([]byte(v), &contracts); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to parse annotation %s on secret %s/%s: %w", common.LicenseContractsAnnotation, src.Namespace, src.Name, err)
+		}
+	}
+
 	for _, entry := range src.Data {
-		if err := r.addLicense(entry); err != nil {
+		if err := r.addLicense(entry, contracts); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
@@ -73,6 +82,12 @@ func (r *LicenseSyncer) Reconcile(ctx context.Context, request reconcile.Request
 	kt, err := cu.CreateOrPatch(ctx, r.SpokeClient, &dst, func(obj client.Object, createOp bool) client.Object {
 		in := obj.(*core.Secret)
 		in.Data = src.Data
+		if v, ok := src.Annotations[common.LicenseContractsAnnotation]; ok {
+			if in.Annotations == nil {
+				in.Annotations = map[string]string{}
+			}
+			in.Annotations[common.LicenseContractsAnnotation] = v
+		}
 		return in
 	})
 	if err != nil {
@@ -93,7 +108,7 @@ func (r *LicenseSyncer) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *LicenseSyncer) addLicense(data []byte) error {
+func (r *LicenseSyncer) addLicense(data []byte, contracts map[string]*v1alpha1.Contract) error {
 	license, err := verifier.ParseLicense(verifier.ParserOptions{
 		ClusterUID: r.ClusterID,
 		CACert:     r.CaCert,
@@ -111,7 +126,7 @@ func (r *LicenseSyncer) addLicense(data []byte) error {
 			"plan", license.PlanName,
 			"expiry", license.NotAfter.UTC().Format(time.RFC822),
 		)
-		r.R.Add(&license, nil)
+		r.R.Add(&license, contracts[license.ID])
 	}
 	return nil
 }
