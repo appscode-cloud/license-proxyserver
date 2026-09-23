@@ -28,6 +28,7 @@ import (
 	"github.com/pkg/errors"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"gomodules.xyz/cert/certstore"
+	v "gomodules.xyz/x/version"
 	corev1 "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -93,6 +94,13 @@ func GetConfigValues(kc client.Client, opts *ManagerOptions, cs *certstore.CertS
 		}
 
 		vals := addonfactory.MergeValues(values, overrideValues)
+		// The embedded chart's appVersion drifts from releases; pin the agent to the manager's own build.
+		if v.Version.Version != "" {
+			err = unstructured.SetNestedField(vals, v.Version.Version, "image", "tag")
+			if err != nil {
+				return nil, err
+			}
+		}
 		if opts.RegistryFQDN != "" {
 			err = unstructured.SetNestedField(vals, opts.RegistryFQDN, "registryFQDN")
 			if err != nil {
