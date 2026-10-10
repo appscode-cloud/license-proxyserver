@@ -255,4 +255,5 @@ func (r *LicenseAcquirer) getNewLicense(cid string, features []string) (*v1alpha
 		return nil, nil, err
 	}
 	return &l, con, nil
+
 }
